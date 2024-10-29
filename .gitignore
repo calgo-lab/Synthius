@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caching directories
+.mypy_cache/
+
+# Data directories
+/data
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+.env
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE specific files
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# Log files
+*.log
+
+# Other files and folders that should be ignored
+*.bak
+*.tmp
+/models
+/models-MIMIC
+/notebooks/MIMIC_
+/notebooks/outdated
+/documentation/figures
