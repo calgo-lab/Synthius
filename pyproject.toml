@@ -1,10 +1,14 @@
 [tool.poetry]
-name = "SynThesis"
+name = "Synthius"
 version = "0.1.0"
 description = "A toolkit for generating and evaluating synthetic data in terms of utility, privacy, and similarity"
-authors = ["Maryam Mohebi <maryam@mohebi.me"]
+authors = ["Maryam Mohebi <maryam@mohebi.me>"]
 readme = "README.md"
 packages = [{ include = "synthetic_data" }]
+license = "MIT"
+keywords = ["synthetic data", "privacy", "utility", "similarity", "machine learning"]
+repository = "https://github.com/maryam-mohebbi/Synthius"
+homepage = "https://github.com/maryam-mohebbi/Synthius"
 
 [tool.poetry.dependencies]
 python = "3.10.10"
@@ -39,6 +43,7 @@ ipython-autotime = "^0.3.2"
 black = "^23.11.0"
 mypy = "^1.7.0"
 ruff = "^0.1.6"
+ipykernel = "^6.29.5"
 
 [build-system]
 requires = ["poetry-core"]
