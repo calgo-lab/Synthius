@@ -11,6 +11,8 @@ from sklearn.impute import SimpleImputer
 
 logger = getLogger()
 
+# flake8: noqa
+
 
 def bnd_fun(tree: int, p: int, forest: RandomForestRegressor, feature_names: list[str]) -> pd.DataFrame:
     """Computes the lower and upper bounds for each node in a decision tree within a random forest.
