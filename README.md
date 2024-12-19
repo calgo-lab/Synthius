@@ -23,7 +23,7 @@ pip install synthius
 ### Step 2: Usage Example
 To understand how to use this package, explore the three example Jupyter notebooks included in the repository:
 
-1. **[Generator](pexample/1_generator.ipynb)**
+1. **[Generator](example/1_generator.ipynb)**
    - Demonstrates how to generate synthetic data using seven different models.
    - Update paths and configurations (e.g., file paths, target column) to fit your dataset.
    - Run the cells to generate synthetic datasets.
@@ -32,14 +32,32 @@ To understand how to use this package, explore the three example Jupyter noteboo
    - Evaluates the utility.
    - Update the paths as needed to analyze your data.
 
-3. **[Evaluation](pexample/3_evaluation.ipynb)**
+3. **[Evaluation](example/3_evaluation.ipynb)**
    - Provides examples of computing metrics for evaluating synthetic data, including:
      - Utility
      - Fidelity/Similarity
      - Privacy
    - Update paths and dataset-specific configurations and run the cells to compute the results.
 
-These notebooks are provided as examples to help users understand and use the toolkit effectively.
+These notebooks serve as practical examples to demonstrate how to effectively utilize the toolkit.
+
+
+### Additional Setup for Mac Users
+Mac users may encounter errors during installation. To resolve these issues, install the required dependencies and set up the environment:
+
+1. Install dependencies using Homebrew:
+   ```bash
+   brew install libomp llvm
+   ```
+
+2. Set up the environment:
+   ```bash
+   export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+   export CC=$(brew --prefix llvm)/bin/clang
+   export CXX=$(brew --prefix llvm)/bin/clang++
+   export CXXFLAGS="-I$(brew --prefix llvm)/include -I$(brew --prefix libomp)/include"
+   export LDFLAGS="-L$(brew --prefix llvm)/lib -L$(brew --prefix libomp)/lib -lomp"
+   ```
 
 
 ## Acknowledgments
