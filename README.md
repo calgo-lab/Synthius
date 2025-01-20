@@ -23,16 +23,16 @@ pip install synthius
 ### Step 2: Usage Example
 To understand how to use this package, explore the three example Jupyter notebooks included in the repository:
 
-1. **[Generator](example/1_generator.ipynb)**
+1. **[Generator](examples/1_generator.ipynb)**
    - Demonstrates how to generate synthetic data using seven different models.
    - Update paths and configurations (e.g., file paths, target column) to fit your dataset.
    - Run the cells to generate synthetic datasets.
 
-2. **[AutoGloun](example/2_autogloun.ipynb)**
+2. **[AutoGloun](examples/2_autogloun.ipynb)**
    - Evaluates the utility.
    - Update the paths as needed to analyze your data.
 
-3. **[Evaluation](example/3_evaluation.ipynb)**
+3. **[Evaluation](examples/3_evaluation.ipynb)**
    - Provides examples of computing metrics for evaluating synthetic data, including:
      - Utility
      - Fidelity/Similarity
