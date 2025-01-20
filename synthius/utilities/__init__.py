@@ -1,7 +1,5 @@
-from .metric_evaluator import MetricsAggregator, metric_selection, privacy_risk_plot
+from .metric_evaluator import MetricsAggregator
 
 __all__ = [
     "MetricsAggregator",
-    "metric_selection",
-    "privacy_risk_plot",
 ]
