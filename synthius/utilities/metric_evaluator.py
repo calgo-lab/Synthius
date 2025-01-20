@@ -27,7 +27,6 @@ from synthius.metric import (
     PrivacyAgainstInference,
     PropensityScore,
     SinglingOutMetric,
-    SVCEvaluator,
 )
 from synthius.metric.utils import format_value, generate_metadata, load_data
 from synthius.model import ModelLoader
@@ -47,7 +46,6 @@ METRIC_CLASSES = {
     "PrivacyAgainstInference": PrivacyAgainstInference,
     "PropensityScore": PropensityScore,
     "SinglingOutMetric": SinglingOutMetric,
-    "SVCEvaluator": SVCEvaluator,
 }
 
 
@@ -308,16 +306,6 @@ class MetricsAggregator:
             display_result=False,
         )
         self.add_metrics(privacy_against_inference)
-
-    @handle_errors
-    def run_svc_evaluator(self: MetricsAggregator) -> None:
-        """Executes the SVC Evaluator Metrics, adding their results to the aggregated output."""
-        svc_evaluator = SVCEvaluator(
-            real_data_path=self.real_data_path,
-            synthetic_data_paths=self.synthetic_data_paths,
-            display_result=False,
-        )
-        self.add_metrics(svc_evaluator)
 
     @handle_errors
     def run_propensity_score(self: MetricsAggregator) -> None:
