@@ -4,7 +4,7 @@ version = "0.1.1"
 description = "A toolkit for generating and evaluating synthetic data in terms of utility, privacy, and similarity"
 authors = ["Maryam Mohebi <maryam@mohebi.me>"]
 readme = "README.md"
-packages = [{ include = "synthetic_data" }]
+packages = [{ include = "synthius" }]
 license = "MIT"
 keywords = [
     "synthetic data",
@@ -14,8 +14,8 @@ keywords = [
     "fidelity",
     "machine learning",
 ]
-repository = "https://github.com/maryam-mohebbi/Synthius"
-homepage = "https://github.com/maryam-mohebbi/Synthius"
+repository = "https://github.com/calgo-lab/Synthius"
+homepage = "https://github.com/calgo-lab/Synthius"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
