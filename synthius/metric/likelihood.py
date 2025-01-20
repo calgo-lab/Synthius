@@ -3,7 +3,7 @@ from __future__ import annotations
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from logging import getLogger
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from IPython.display import display
@@ -14,6 +14,10 @@ from sdmetrics.single_table import (
 )
 
 from synthius.metric.utils import BaseMetric, apply_preprocessing, generate_metadata, load_data, preprocess_data
+
+if TYPE_CHECKING:
+    from typing import Any, Callable
+
 
 logger = getLogger()
 

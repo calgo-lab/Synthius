@@ -4,13 +4,17 @@ import functools
 import logging
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from IPython.display import display
 from sdmetrics.single_table import ContinuousKLDivergence, CSTest, DiscreteKLDivergence
 
 from synthius.metric.utils import BaseMetric, generate_metadata, load_data
+
+if TYPE_CHECKING:
+    from typing import Any, Callable
+
 
 logger = logging.getLogger(__name__)
 pd.options.mode.copy_on_write = True

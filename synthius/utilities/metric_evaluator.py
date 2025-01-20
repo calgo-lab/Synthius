@@ -5,7 +5,7 @@ import logging
 import pickle
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -13,10 +13,13 @@ from PIL import Image
 from sklearn.model_selection import train_test_split
 
 if TYPE_CHECKING:
+    from typing import Any, Callable
+
     from synthius.metric.utils import BaseMetric
 
 
 from pathlib import Path
+from typing import TypeVar
 
 from synthius.metric import (
     AdvancedQualityMetrics,
