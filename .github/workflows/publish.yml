@@ -1,36 +1,59 @@
-name: Publish to PyPI
+# This workflow will upload a Python Package to PyPI when a release is created
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Upload Python Package
 
 on:
-  push:
-    tags:
-      - 'v0.1.1'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
-  publish:
+  pypi-publish:
+    name: Upload release to PyPI
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/synthius/
+    permissions:
+      id-token: write
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      #----------------------------------------------
+      #       check-out repo and set-up python
+      #----------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10.10'
+          python-version: "3.10"
 
+      #----------------------------------------------
+      #        -----  install poetry  -----
+      #----------------------------------------------
       - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
+        uses: snok/install-poetry@v1
 
-      - name: Configure Poetry
-        run: poetry config virtualenvs.create false
-
+      #----------------------------------------------
+      #   install dependencies and build packages
+      #----------------------------------------------
       - name: Install dependencies
-        run: poetry install
-
-      - name: Build package
+        run: poetry install --sync --no-interaction
+      - name: Package project
         run: poetry build
 
-      - name: Publish to PyPI
-        env:
-          POETRY_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-        run: poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+      #----------------------------------------------
+      #               upload to PyPI
+      #----------------------------------------------
+      - name: Publish release distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
