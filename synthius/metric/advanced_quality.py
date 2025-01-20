@@ -220,9 +220,7 @@ class AdvancedQualityMetrics(BaseMetric):
         if self.want_parallel:
             with ProcessPoolExecutor() as executor:
                 # Create a dictionary to map futures to paths
-                futures_to_paths: dict[Future, Path] = {
-                    executor.submit(self.evaluate, path): path for path in self.synthetic_data_paths
-                }
+                futures_to_paths: dict[Future, Path] = {executor.submit(self.evaluate, path): path for path in self.synthetic_data_paths}
 
                 for future in as_completed(futures_to_paths):
                     path = futures_to_paths[future]

@@ -115,10 +115,7 @@ class NumericalLabelEncoder:
         for column in dataframe.columns:
             if dataframe[column].dtype in ["object", "bool"]:
                 unique_values = list(dataframe[column].dropna().unique())
-                label_mapping = {
-                    value if not isinstance(value, np.bool_) else bool(value): i
-                    for i, value in enumerate(unique_values)
-                }
+                label_mapping = {value if not isinstance(value, np.bool_) else bool(value): i for i, value in enumerate(unique_values)}
                 nan_label = len(unique_values)
                 label_mapping[str(np.nan)] = nan_label
                 encoding_metadata[column] = label_mapping
@@ -254,9 +251,7 @@ class NumericalLabelEncoder:
             # Ensure numerical keys are correctly converted back to their original types
             for column, mappings in self.metadata.items():
                 if "nan_label" not in mappings:
-                    self.metadata[column] = {
-                        float(k) if k.replace(".", "", 1).isdigit() else k: v for k, v in mappings.items()
-                    }
+                    self.metadata[column] = {float(k) if k.replace(".", "", 1).isdigit() else k: v for k, v in mappings.items()}
 
 
 class CategoricalEncoder:
@@ -355,9 +350,7 @@ class CategoricalEncoder:
             A tuple containing the encoded pandas DataFrame and a dictionary of encoding metadata.
         """
         encoding_metadata = {}
-        columns_to_encode = (
-            dataframe.columns.difference([self.label_column]) if self.label_column else dataframe.columns
-        )
+        columns_to_encode = dataframe.columns.difference([self.label_column]) if self.label_column else dataframe.columns
 
         for column in columns_to_encode:
             unique_values = dataframe[column].unique()
@@ -444,6 +437,4 @@ class CategoricalEncoder:
             # Convert numeric strings back to their original types where necessary
             self.metadata = {}
             for column, mappings in loaded_metadata.items():
-                self.metadata[column] = {
-                    float(k) if k.replace(".", "", 1).isdigit() else k: v for k, v in mappings.items()
-                }
+                self.metadata[column] = {float(k) if k.replace(".", "", 1).isdigit() else k: v for k, v in mappings.items()}

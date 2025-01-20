@@ -141,9 +141,7 @@ class LikelihoodMetrics(BaseMetric):
         results: dict[str, Any] = {"Model Name": model_name}
 
         with ProcessPoolExecutor() as executor:
-            futures: dict[Future, str] = {
-                executor.submit(metric_dispatch[metric], synthetic_data): metric for metric in metric_dispatch
-            }
+            futures: dict[Future, str] = {executor.submit(metric_dispatch[metric], synthetic_data): metric for metric in metric_dispatch}
 
             for future in as_completed(futures):
                 metric_name = futures[future]
@@ -245,10 +243,7 @@ class LikelihoodMetrics(BaseMetric):
         """Evaluates all synthetic datasets in parallel."""
         if self.selected_metrics is None:
             with ProcessPoolExecutor() as executor:
-                futures = {
-                    executor.submit(self.evaluate_all_metrics_in_parallel, path): path
-                    for path in self.synthetic_data_paths
-                }
+                futures = {executor.submit(self.evaluate_all_metrics_in_parallel, path): path for path in self.synthetic_data_paths}
                 for future in as_completed(futures):
                     path = futures[future]
                     try:

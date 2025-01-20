@@ -155,9 +155,7 @@ class DataImputationPreprocessor:
                 if col in self.float_cols:
                     original_data[col] = original_data[col].round(self.decimal_places[col])
             elif col not in self.bool_cols:
-                original_data[col] = (
-                    (original_data[col] * (self.label_encoders[col].classes_.size - 1)).round().astype(int)
-                )
+                original_data[col] = (original_data[col] * (self.label_encoders[col].classes_.size - 1)).round().astype(int)
                 original_data[col] = self.label_encoders[col].inverse_transform(original_data[col])
 
         # Convert boolean columns back to booleans
@@ -171,9 +169,7 @@ class DataImputationPreprocessor:
             missing_proportion = self.missing_value_proportions[col]
             if missing_proportion > 0:
                 filled_value = self.fill_values[col]
-                missing_mask = (original_data[col] == filled_value) & (
-                    self.random_generator.random(len(original_data)) < missing_proportion
-                )
+                missing_mask = (original_data[col] == filled_value) & (self.random_generator.random(len(original_data)) < missing_proportion)
                 original_data.loc[missing_mask, col] = np.nan
 
         # Reintroduce the original ID column if applicable

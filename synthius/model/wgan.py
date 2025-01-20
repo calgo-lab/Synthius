@@ -46,7 +46,7 @@ class WGAN(Model):
     ```
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self: WGAN,
         n_features: int,
         base_nodes: int = 64,

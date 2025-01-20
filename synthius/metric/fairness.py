@@ -110,9 +110,11 @@ class LogDisparityMetrics(BaseMetric):
         Returns:
             str: The CSS style to be applied based on the value.
         """
+        epsilon = 0.05
+
         if val == 0:
             color = "blue"
-        elif -0.05 <= val <= 0.05:
+        elif -epsilon <= val <= epsilon:
             color = "green"
         else:
             color = None
@@ -188,17 +190,9 @@ class DistributionVisualizer:
         else:
             self.features = list(self.real_data.columns)
 
-        self.categorical_features = [
-            f
-            for f in self.features
-            if self.real_data[f].nunique() == 2 and self.real_data[f].dtype not in ["int64", "float64"]
-        ]
+        self.categorical_features = [f for f in self.features if self.real_data[f].nunique() == 2 and self.real_data[f].dtype not in ["int64", "float64"]]
         self.numeric_features = [f for f in self.features if self.real_data[f].dtype in ["int64", "float64"]]
-        self.other_features = [
-            f
-            for f in self.features
-            if f not in self.categorical_features + self.numeric_features and self.real_data[f].nunique() <= 45
-        ]
+        self.other_features = [f for f in self.features if f not in self.categorical_features + self.numeric_features and self.real_data[f].nunique() <= 45]
 
     def create_category_plots(
         self: DistributionVisualizer,
@@ -289,8 +283,10 @@ class DistributionVisualizer:
         plot_width = int(total_usable_width)  # Adjust plot width based on actual columns and convert to int
 
         # Set fixed subplot height if rows <= 6, otherwise calculate dynamically
+        max_rows_for_fixed_size = 6
         fixed_subplot_height = 200  # Fixed height for each subplot
-        if rows <= 6:
+
+        if rows <= max_rows_for_fixed_size:
             plot_height = max(rows * fixed_subplot_height, 400)  # Ensure a minimum height
         else:
             # Use dynamic calculation for more rows
@@ -336,7 +332,7 @@ class DistributionVisualizer:
             column_name=feature,
         )
 
-    def _add_traces_to_figure(  # noqa: PLR0913
+    def _add_traces_to_figure(
         self: DistributionVisualizer,
         fig: Figure,
         temp_fig: Figure,

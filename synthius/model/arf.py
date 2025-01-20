@@ -209,10 +209,7 @@ class DataProcessor:
 
                 # Convert to categories and replace NaN with the placeholder
                 self.transformed_data[col] = (
-                    self.data[col]
-                    .astype("category")
-                    .cat.add_categories([self.categorical_placeholder])
-                    .fillna(self.categorical_placeholder)
+                    self.data[col].astype("category").cat.add_categories([self.categorical_placeholder]).fillna(self.categorical_placeholder)
                 )
         return self.transformed_data
 
@@ -331,9 +328,7 @@ class ARF:
         assert isinstance(x, pd.core.frame.DataFrame), f"Expected pandas DataFrame as input, got: {type(x)}"
         assert len(set(list(x))) == x.shape[1], "Every column must have a unique column name"
         assert max_iters >= 0, "Negative number of iterations is not allowed: parameter max_iters must be >= 0"
-        assert (
-            min_node_size > 0
-        ), "Minimum number of samples in terminal nodes (parameter min_node_size) must be greater than zero"
+        assert min_node_size > 0, "Minimum number of samples in terminal nodes (parameter min_node_size) must be greater than zero"
         assert num_trees > 0, "Number of trees in the random forest (parameter num_trees) must be greater than zero"
         assert 0 <= delta <= 0.5, "Parameter delta must be in range 0 <= delta <= 0.5"
 
@@ -533,10 +528,7 @@ class ARF:
 
         # Compute leaf bounds and coverage
         bnds = pd.concat(
-            [
-                bnd_fun(tree=j, p=self.p, forest=self.clf, feature_names=self.orig_colnames)
-                for j in range(self.num_trees)
-            ],
+            [bnd_fun(tree=j, p=self.p, forest=self.clf, feature_names=self.orig_colnames) for j in range(self.num_trees)],
         )
         bnds["f_idx"] = bnds.groupby(["tree", "leaf"]).ngroup()
 
@@ -625,9 +617,7 @@ class ARF:
                     tmp = tmp.explode("levels")
                     cat_val = pd.DataFrame(self.levels).melt()
                     cat_val["levels"] = cat_val["value"]
-                    tmp = tmp.merge(cat_val, on=["variable", "levels"])[
-                        ["variable", "f_idx", "tree", "nodeid", "value"]
-                    ]
+                    tmp = tmp.merge(cat_val, on=["variable", "levels"])[["variable", "f_idx", "tree", "nodeid", "value"]]
                     # Populate count, k
                     tmp = tmp.merge(
                         long[["f_idx", "variable", "tree", "nodeid", "count_var", "k"]],
@@ -640,9 +630,7 @@ class ARF:
                         how="left",
                     )
                     long.loc[long["count_var_val"].isna(), "count_var_val"] = 0
-                    long = long[
-                        ["f_idx", "tree", "nodeid", "variable", "value", "count_var_val", "count_var", "k"]
-                    ].drop_duplicates()
+                    long = long[["f_idx", "tree", "nodeid", "variable", "value", "count_var_val", "count_var", "k"]].drop_duplicates()
                     # Compute posterior probabilities
                     long["prob"] = (long["count_var_val"] + self.alpha) / (long["count_var"] + self.alpha * long["k"])
                     long["value"] = long["value"].astype("int8")
@@ -686,13 +674,7 @@ class ARF:
             size=n,
         )
 
-        sampled_trees_nodes = (
-            unique_bnds[["tree", "nodeid"]]
-            .iloc[draws,]
-            .reset_index(drop=True)
-            .reset_index()
-            .rename(columns={"index": "obs"})
-        )
+        sampled_trees_nodes = unique_bnds[["tree", "nodeid"]].iloc[draws,].reset_index(drop=True).reset_index().rename(columns={"index": "obs"})
 
         # Get distributions parameters for each new obs.
         if np.invert(self.factor_cols).any():
@@ -717,10 +699,7 @@ class ARF:
                 # Factor columns: Multinomial distribution
                 data_new.isetitem(
                     j,
-                    obs_probs[obs_probs["variable"] == colname]
-                    .groupby("obs")
-                    .sample(weights="prob")["value"]
-                    .reset_index(drop=True),
+                    obs_probs[obs_probs["variable"] == colname].groupby("obs").sample(weights="prob")["value"].reset_index(drop=True),
                 )
 
             elif self.dist == "truncnorm":

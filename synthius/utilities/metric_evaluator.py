@@ -383,10 +383,7 @@ class MetricsAggregator:
 
         metric_name = "Utility"
 
-        if (
-            not self.all_results.empty
-            and metric_name in self.all_results.index.get_level_values("Metric Type").unique()
-        ):
+        if not self.all_results.empty and metric_name in self.all_results.index.get_level_values("Metric Type").unique():
             for index, row in result.iterrows():
                 self.all_results.loc[(metric_name, index), :] = row
         else:

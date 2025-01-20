@@ -299,9 +299,7 @@ class PrivacyAgainstInference(BaseMetric):
         metric_dispatch = self.get_metric_dispatch()
 
         with ProcessPoolExecutor() as executor:
-            futures: dict[Future, str] = {
-                executor.submit(metric_dispatch[metric], synthetic_data): metric for metric in metric_dispatch
-            }
+            futures: dict[Future, str] = {executor.submit(metric_dispatch[metric], synthetic_data): metric for metric in metric_dispatch}
 
             for future in as_completed(futures):
                 metric_name = futures[future]
@@ -424,9 +422,7 @@ class PrivacyAgainstInference(BaseMetric):
     def _submit_jobs(self: PrivacyAgainstInference, executor: ProcessPoolExecutor) -> dict[Future, Path]:
         """Submits jobs to the executor based on whether all or selected metrics are being evaluated."""
         if self.selected_metrics is None:
-            return {
-                executor.submit(self.evaluate_all_metrics_in_parallel, path): path for path in self.synthetic_data_paths
-            }
+            return {executor.submit(self.evaluate_all_metrics_in_parallel, path): path for path in self.synthetic_data_paths}
 
         return {executor.submit(self.evaluate_selected_metrics, path): path for path in self.synthetic_data_paths}
 
