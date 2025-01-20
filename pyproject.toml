@@ -62,7 +62,7 @@ target-version = "py39"
 line-length = 120
 fix = true
 select = ["ALL"]
-ignore = ["D100", "D104", "ISC003", "TD003"]
+ignore = ["D100", "D104", "ISC003", "TD003","PLR2004"]
 
 [tool.ruff.pydocstyle]
 convention = "google"

@@ -112,7 +112,7 @@ class LogDisparityMetrics(BaseMetric):
         """
         if val == 0:
             color = "blue"
-        elif -0.05 <= val <= 0.05:  # noqa: PLR2004
+        elif -0.05 <= val <= 0.05:
             color = "green"
         else:
             color = None
@@ -191,13 +191,13 @@ class DistributionVisualizer:
         self.categorical_features = [
             f
             for f in self.features
-            if self.real_data[f].nunique() == 2 and self.real_data[f].dtype not in ["int64", "float64"]  # noqa: PLR2004
+            if self.real_data[f].nunique() == 2 and self.real_data[f].dtype not in ["int64", "float64"]
         ]
         self.numeric_features = [f for f in self.features if self.real_data[f].dtype in ["int64", "float64"]]
         self.other_features = [
             f
             for f in self.features
-            if f not in self.categorical_features + self.numeric_features and self.real_data[f].nunique() <= 45  # noqa: PLR2004
+            if f not in self.categorical_features + self.numeric_features and self.real_data[f].nunique() <= 45
         ]
 
     def create_category_plots(
@@ -290,7 +290,7 @@ class DistributionVisualizer:
 
         # Set fixed subplot height if rows <= 6, otherwise calculate dynamically
         fixed_subplot_height = 200  # Fixed height for each subplot
-        if rows <= 6:  # noqa: PLR2004
+        if rows <= 6:
             plot_height = max(rows * fixed_subplot_height, 400)  # Ensure a minimum height
         else:
             # Use dynamic calculation for more rows

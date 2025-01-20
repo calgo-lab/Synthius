@@ -227,7 +227,6 @@ class UniformDataEncoder:
             if self.nan_value in labels:
                 result = result.astype(str).replace(self.nan_value, np.nan)
 
-            # TODO: NaN filing is not working
             if nan_filling:
                 result = self._replace_nan_intervals(result, col_data, column)
 
