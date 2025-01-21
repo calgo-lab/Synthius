@@ -1,0 +1,37 @@
+name: Ruff
+
+on:
+  - pull_request
+
+jobs:
+  Ruff:
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["ubuntu-latest", "macos-latest"]
+        python-version: ["3.10", "3.11"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      #----------------------------------------------
+      #       check-out repo and set-up python
+      #----------------------------------------------
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up python ${{ matrix.python-version }}
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      #----------------------------------------------
+      #            -----  run ruff   -----
+      #----------------------------------------------
+      - name: Lint and check format with ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          version-file: "pyproject.toml"
+      - run: ruff check --output-format=github
+      - run: ruff format --check
