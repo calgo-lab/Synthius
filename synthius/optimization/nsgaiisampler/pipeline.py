@@ -39,7 +39,7 @@ class PrivacyMetricError(ValueError):
         super().__init__(
             "You selected a privacy-related metric (e.g., 'Privacy Risk'), "
             "but did not enable `linkability_metric=True` or `singlingout_metric=True`. "
-            "Please set the correct flag to use these metrics."
+            "Please set the correct flag to use these metrics.",
         )
 
 
@@ -264,7 +264,7 @@ class NSGAIISamplerHPOptimizer:
 
         logger.warning(
             "Please provide all required parameters for full metrics calculation or set calculate_all_results to False to ignore this error."
-            "If you not provide all required parameters, metric calculation for the best model will not be performed.\n"
+            "If you not provide all required parameters, metric calculation for the best model will not be performed.\n",
         )
 
         logger.info("✅ All required parameters for full metric calculation are provided.")
@@ -443,7 +443,7 @@ class NSGAIISamplerHPOptimizer:
                         "n_neighbors": self.linkability_n_neighbors,
                         "n_attacks": self.linkability_n_attacks,
                         "control_data_path": self.output_path / "test.csv",
-                    }
+                    },
                 )
             elif metric_class == "SinglingOutMetric" and self.singlingout_metric:
                 metric_params.update(
@@ -452,7 +452,7 @@ class NSGAIISamplerHPOptimizer:
                         "n_attacks": self.singlingout_n_attacks,
                         "n_cols": self.singlingout_n_cols,
                         "control_data_path": self.output_path / "test.csv",
-                    }
+                    },
                 )
             elif metric_class == "DistanceMetrics":
                 metric_params.update({"scaler_choice": self.distance_scaler, "id_column": self.id_column})
@@ -592,7 +592,11 @@ class NSGAIISamplerHPOptimizer:
             if study.best_trials:
                 best_trial = study.best_trials[0]
                 logger.info(
-                    "Trial %s finished with value: %s. Best trial so far: %s with values: %s", trial.number, result, best_trial.number, best_trial.values
+                    "Trial %s finished with value: %s. Best trial so far: %s with values: %s",
+                    trial.number,
+                    result,
+                    best_trial.number,
+                    best_trial.values,
                 )
 
         best_trials = study.best_trials
