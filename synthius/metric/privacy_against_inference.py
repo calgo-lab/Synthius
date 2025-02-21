@@ -3,7 +3,7 @@ from __future__ import annotations
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from logging import getLogger
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any
 
 import pandas as pd
 from IPython.display import display
@@ -18,11 +18,7 @@ from sdmetrics.single_table import (
     CategoricalZeroCAP,
 )
 
-from synthius.metric.utils import BaseMetric, apply_preprocessing, generate_metadata, load_data, preprocess_data
-
-if TYPE_CHECKING:
-    from typing import Any, Callable
-
+from synthius.metric.utils import BaseMetric, generate_metadata, load_data, preprocess_data
 
 logger = getLogger()
 
@@ -259,13 +255,22 @@ class PrivacyAgainstInference(BaseMetric):
             model_kwargs=model_kwargs,
         )
 
-    def get_metric_dispatch(self: PrivacyAgainstInference) -> dict[str, Callable]:
-        """Returns a dictionary mapping metric names to their corresponding computation methods.
+    def evaluate(self: PrivacyAgainstInference, synthetic_data_path: Path) -> pd.DataFrame:
+        """Evaluates a synthetic dataset against the real dataset using advanced quality metrics.
+
+        Args:
+            synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
 
         Returns:
-            dict[str, Callable]: A dictionary where keys are metric names and values are methods to compute them.
+            pd.DataFrame: Evaluation results for the model.
         """
-        return {
+        synthetic_data = load_data(synthetic_data_path).copy()
+        model_name = synthetic_data_path.stem
+
+        results: dict[str, str | float] = {"Model Name": model_name}
+
+        metric_dispatch = {
+            "CategoricalKNN": self.compute_categorical_knn,
             "CategoricalNB": self.compute_categorical_nb,
             "CategoricalRF": self.compute_categorical_rf,
             "CategoricalCAP": self.compute_categorical_cap,
@@ -273,116 +278,15 @@ class PrivacyAgainstInference(BaseMetric):
             "CategoricalGeneralizedCAP": self.compute_categorical_generalized_cap,
             "CategoricalSVM": self.compute_categorical_svm,
             "CategoricalEnsemble": self.compute_categorical_ensemble,
-            "CategoricalKNN": self.compute_categorical_knn,
         }
 
-    def evaluate_all_metrics_in_parallel(self: PrivacyAgainstInference, synthetic_data_path: Path) -> dict[str, Any]:
-        """Evaluates all privacy metrics for a synthetic dataset in parallel.
-
-        Args:
-            synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
-
-        Returns:
-            dict[str, Any]: A dictionary with the computed metrics for the synthetic dataset.
-        """
-        synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values).copy()
-        model_name = synthetic_data_path.stem
-
-        results: dict[str, Any] = {
-            "Model Name": model_name,
-            "CategoricalNB": float("nan"),
-            "CategoricalRF": float("nan"),
-            "CategoricalCAP": float("nan"),
-            "CategoricalZeroCAP": float("nan"),
-            "CategoricalGeneralizedCAP": float("nan"),
-            "CategoricalSVM": float("nan"),
-            "CategoricalEnsemble": float("nan"),
-            "CategoricalKNN": float("nan"),
-        }
-
-        metric_dispatch = self.get_metric_dispatch()
-
-        with ProcessPoolExecutor() as executor:
-            futures: dict[Future, str] = {executor.submit(metric_dispatch[metric], synthetic_data): metric for metric in metric_dispatch}
-
-            for future in as_completed(futures):
-                metric_name = futures[future]
-                try:
-                    results[metric_name] = future.result()
-                    logger.info("%s for %s Done.", metric_name, model_name)
-                except Exception:
-                    logger.exception("Error computing %s for %s", metric_name, model_name)
-                    results[metric_name] = float("nan")
-
-        try:
-            results["CategoricalKNN"] = self.compute_categorical_knn(synthetic_data)
-            logger.info("CategoricalKNN for %s Done.", model_name)
-        except Exception:
-            logger.exception("Error computing CategoricalKNN for %s", model_name)
-            results["CategoricalKNN"] = float("nan")
-
-        return results
-
-    def evaluate_all_metrics_in_sequential(self: PrivacyAgainstInference, synthetic_data_path: Path) -> dict[str, Any]:
-        """Evaluates only selected privacy metrics sequentially for a synthetic dataset.
-
-        Args:
-            synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
-
-        Returns:
-            dict[str, Any]: A dictionary with the computed selected metrics for the synthetic dataset.
-        """
-        synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values).copy()
-        model_name = synthetic_data_path.stem
-
-        metric_dispatch = self.get_metric_dispatch()
-
-        results: dict[str, Any] = {"Model Name": model_name}
-
-        for metric in metric_dispatch:
-            try:
-                results[metric] = metric_dispatch[metric](synthetic_data)
-                logger.info("%s for %s Done.", metric, model_name)
-            except Exception:  # noqa: PERF203
-                logger.exception("Error computing %s for %s", metric, model_name)
-                results[metric] = float("nan")
-
-        return results
-
-    def evaluate_selected_metrics(self: PrivacyAgainstInference, synthetic_data_path: Path) -> dict[str, Any]:
-        """Evaluates only selected privacy metrics sequentially.
-
-        Args:
-            synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
-
-        Returns:
-            dict[str, Any]: A dictionary with the computed selected metrics for the synthetic dataset.
-        """
-        synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values).copy()
-        model_name = synthetic_data_path.stem
-
-        metric_dispatch = self.get_metric_dispatch()
-
-        results: dict[str, Any] = {"Model Name": model_name}
-
-        selected_metrics = self.selected_metrics if self.selected_metrics is not None else []
-
-        if not selected_metrics:
-            logger.warning("No metrics selected for evaluation In Privacy Against Inference.")
-            return results
-
-        for metric in selected_metrics:
+        for metric in self.selected_metrics or metric_dispatch.keys():
             if metric in metric_dispatch:
-                try:
-                    results[metric] = metric_dispatch[metric](synthetic_data)
-                    logger.info("%s for %s Done.", metric, model_name)
-                except Exception as exc:  # noqa: BLE001
-                    logger.error("Error computing %s for %s: %s", metric, model_name, exc)  # noqa: TRY400
-                    results[metric] = None
+                results[metric] = metric_dispatch[metric](synthetic_data)
             else:
-                logger.warning("Metric %s is not supported.", metric)
+                logger.warning("Metric %s is not supported and will be skipped.", metric)
 
-        self.results.append(results)
+        logger.info("Privacy Against Inference for %s Done.", model_name)
         return results
 
     def pivot_results(self: PrivacyAgainstInference) -> pd.DataFrame:
@@ -423,45 +327,34 @@ class PrivacyAgainstInference(BaseMetric):
             logger.exception("Error while pivoting the DataFrame: %s", e)  # noqa: TRY401
             return pd.DataFrame()
 
-    def _submit_jobs(self: PrivacyAgainstInference, executor: ProcessPoolExecutor) -> dict[Future, Path]:
-        """Submits jobs to the executor based on whether all or selected metrics are being evaluated."""
-        if self.selected_metrics is None:
-            return {executor.submit(self.evaluate_all_metrics_in_parallel, path): path for path in self.synthetic_data_paths}
-
-        return {executor.submit(self.evaluate_selected_metrics, path): path for path in self.synthetic_data_paths}
-
-    def _evaluate_parallel(self: PrivacyAgainstInference) -> None:
-        """Evaluates all synthetic datasets in parallel."""
-        with ProcessPoolExecutor() as executor:
-            futures = self._submit_jobs(executor)
-            for future in as_completed(futures):
-                path = futures[future]
-                try:
-                    result = future.result()
-                    if result:
-                        self.results.append(result)
-                except RuntimeError:
-                    logger.exception("Evaluation failed for %s", path)
-                except Exception:
-                    logger.exception("An unexpected error occurred for %s", path)
-
-    def _evaluate_sequential(self: PrivacyAgainstInference) -> None:
-        """Evaluates all synthetic datasets sequentially."""
-        if self.selected_metrics is None:
-            for path in self.synthetic_data_paths:
-                result = self.evaluate_all_metrics_in_sequential(path)
-                self.results.append(result)
-        else:
-            for path in self.synthetic_data_paths:
-                result = self.evaluate_selected_metrics(path)
-                self.results.append(result)
-
     def evaluate_all(self: PrivacyAgainstInference) -> None:
-        """Evaluates all synthetic datasets and stores the results."""
+        """Evaluates all synthetic datasets against the real dataset and displays the results.
+
+        Evaluations are performed in parallel using multiple cores.
+        """
         if self.want_parallel:
-            self._evaluate_parallel()
+            with ProcessPoolExecutor() as executor:
+                # Create a dictionary to map futures to paths
+                futures_to_paths: dict[Future, Path] = {executor.submit(self.evaluate, path): path for path in self.synthetic_data_paths}
+
+                for future in as_completed(futures_to_paths):
+                    path = futures_to_paths[future]
+                    if future.exception():
+                        logger.error("Error processing %s: %s", path.stem, future.exception())
+                    else:
+                        try:
+                            result = future.result()
+                            self.results.append(result)
+                        except Exception as exc:  # noqa: BLE001
+                            logger.error("Unexpected error processing %s: %s", path.stem, exc)  # noqa: TRY400
+
         else:
-            self._evaluate_sequential()
+            for path in self.synthetic_data_paths:
+                try:
+                    result = self.evaluate(path)
+                    self.results.append(result)
+                except Exception:  # noqa: PERF203
+                    logger.exception("Evaluation failed for %s", path)
 
         self.pivoted_results = self.pivot_results()
         if self.display_result:

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import gc
 from logging import getLogger
 from pathlib import Path
 from typing import ClassVar
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import torch
 from autogluon.tabular import TabularPredictor
 from IPython.display import display
 from sklearn.metrics import (
@@ -21,6 +23,9 @@ from sklearn.model_selection import train_test_split
 from synthius.metric.utils import format_value
 
 logger = getLogger()
+
+
+NUM_GPU = 1 if torch.cuda.is_available() else 0
 
 
 class ModelFitter:
@@ -140,7 +145,7 @@ class ModelFitter:
             eval_metric="f1_macro",
             path=self.models_base_path / self.experiment_name,
             verbosity=1,
-        ).fit(train_data=train_data, fit_weighted_ensemble=False)
+        ).fit(train_data=train_data, ag_args_fit={"num_gpus": NUM_GPU}, fit_weighted_ensemble=False)
 
         predictions = predictor.predict(test_data)
         predictions_proba = predictor.predict_proba(test_data, as_multiclass=False)
@@ -192,6 +197,10 @@ class ModelFitter:
         ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
         plt.show()
         plt.close(fig)
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
 
     def pivot_results(self: ModelFitter) -> pd.DataFrame:
         """Transforms the accumulated results list into a pivoted DataFrame.

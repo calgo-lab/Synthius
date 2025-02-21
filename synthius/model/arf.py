@@ -108,8 +108,6 @@ class DataProcessor:
         List of continuous column names.
     categorical_columns : list
         List of categorical column names.
-    original_id_values : pd.Series | None
-        The original ID column values to be reintroduced later.
     id_column_index : int | None
         The original index position of the ID column.
     """
@@ -134,12 +132,10 @@ class DataProcessor:
         self.categorical_placeholder = "missed"
         self.continuous_columns: list[str] = []
         self.categorical_columns: list[str] = []
-        self.original_id_values: pd.Series | None = None
         self.id_column_index: int | None = None
 
         if self.id_column:
             if self.id_column in self.data.columns:
-                self.original_id_values = self.data[self.id_column].copy()
                 self.id_column_index = self.data.columns.get_loc(self.id_column)
                 self.data = self.data.drop(self.id_column, axis=1)
             else:

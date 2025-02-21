@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import torch
 from autogluon.tabular import TabularPredictor
 from IPython.display import display
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -16,6 +17,10 @@ from xgboost import XGBClassifier
 from synthius.metric.utils import BaseMetric, load_data
 
 logger = getLogger()
+
+
+NUM_GPU = 1 if torch.cuda.is_available() else 0
+
 
 # flake8: noqa:N806
 
@@ -179,7 +184,7 @@ class PropensityScore(BaseMetric):
             problem_type="binary",
             verbosity=1,
             path=self.model_dir / model_subdir,
-        ).fit(train_data=train_data)
+        ).fit(train_data=train_data, ag_args_fit={"num_gpus": NUM_GPU})
         performance = predictor.evaluate(test_data)
 
         return performance["accuracy"]

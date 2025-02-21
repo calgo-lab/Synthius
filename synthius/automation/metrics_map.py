@@ -107,17 +107,10 @@ METRIC_REQUIRED_PARAMS = {
         "linkability_n_attacks",
         "linkability_aux_cols",
         "linkability_n_neighbors",
-        "control_data_path",
     ],
-    "SinglingOutMetric": ["singlingout_mode", "singlingout_n_attacks", "singlingout_n_cols", "control_data_path"],
+    "SinglingOutMetric": ["singlingout_mode", "singlingout_n_attacks", "singlingout_n_cols"],
     "DistanceMetrics": ["distance_scaler", "id_column"],
 }
 
 
-DEFAULT_METRICS: list[str] = [
-    "CategoricalZeroCAP",
-    "CategoricalGeneralizedCAP",
-    "CategoricalEnsemble",
-    "Mean | DCR | R&S",
-    "Mean | DCR | RR",
-]
+DEFAULT_METRICS: list[str] = ["CS Test", "CategoricalNB", "Overall Quality"]

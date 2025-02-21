@@ -225,7 +225,7 @@ class NumericalLabelEncoder:
             # Check for and correct -0.0 values
             if decoded_dataframe[column].dtype in ["float64", "float32"]:
                 decoded_dataframe[column] = decoded_dataframe[column].apply(
-                    lambda x: 0.0 if np.signbit(x) and x == 0.0 else x,  # noqa: PLR2004
+                    lambda x: 0.0 if np.signbit(x) and x == 0.0 else x,
                 )
         return decoded_dataframe
 

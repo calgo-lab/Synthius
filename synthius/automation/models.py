@@ -15,7 +15,6 @@ from synthius.model import (
     ARF,
     WGAN,
     GaussianMultivariateSynthesizer,
-    data_batcher,
 )
 
 if TYPE_CHECKING:
@@ -164,16 +163,6 @@ def run_wgan(
     preprocessor = DataImputationPreprocessor(train_data, id_column)
     processed_data = preprocessor.fit_transform()
 
-    synthesizer = WGAN(
-        n_features=processed_data.shape[1],
-        base_nodes=256,
-        batch_size=64,
-        critic_iters=10,
-        lambda_gp=10.0,
-    )
-
-    dataset = data_batcher(processed_data, batch_size=64)
-
     if len(train_data) <= SMALL_DATASET_THRESHOLD:
         epochs = 10_000
     if SMALL_DATASET_THRESHOLD < len(train_data) <= MEDIUM_DATASET_THRESHOLD:
@@ -183,7 +172,9 @@ def run_wgan(
     if len(train_data) > LARGE_DATASET_THRESHOLD:
         epochs = 100_000
 
-    synthesizer.train(dataset, num_epochs=epochs, log_interval=int(epochs / 5), log_training=True)
+    synthesizer = WGAN(n_features=processed_data.shape[1], base_nodes=256, batch_size=64, critic_iters=10, lambda_gp=10.0, num_epochs=epochs)
+
+    synthesizer.train(processed_data, log_interval=int(epochs / 5), log_training=True)
 
     samples = synthesizer.generate_samples(num_sample)
     synthetic_data = pd.DataFrame(samples, columns=processed_data.columns)

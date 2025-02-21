@@ -1,7 +1,7 @@
 from .arf import ARF
 from .autogloun import ModelFitter, ModelLoader
 from .gaussian_multivariate import GaussianMultivariateSynthesizer
-from .wgan import WGAN, data_batcher
+from .wgan import WGAN
 
 __all__ = [
     "ARF",
@@ -9,5 +9,4 @@ __all__ = [
     "GaussianMultivariateSynthesizer",
     "ModelFitter",
     "ModelLoader",
-    "data_batcher",
 ]

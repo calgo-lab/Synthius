@@ -268,7 +268,7 @@ class SyntheticModelFinder:
 
         for i, trial in enumerate(best_trials):
             logging.info("Trial %s: Model -> %s", i + 1, trial.params["model"])
-            for metric, value in zip(self.selected_metrics, trial.values):
+            for metric, value in zip(self.selected_metrics, trial.values, strict=False):
                 logging.info("%s: %s", metric, value)
 
         if self.utility_op:

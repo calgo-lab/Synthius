@@ -90,11 +90,11 @@ class UniformDataEncoder:
                 two dictionaries, one for the frequencies and one for the intervals
                 of the categories.
         """
-        frequencies = dict(zip(categories, freq))
+        frequencies = dict(zip(categories, freq, strict=False))
         shift = np.cumsum(np.hstack([0, freq]))
         shift[-1] = 1
         list_int = [[shift[i], shift[i + 1]] for i in range(len(shift) - 1)]
-        intervals = dict(zip(categories, list_int))
+        intervals = dict(zip(categories, list_int, strict=False))
 
         return frequencies, intervals
 

@@ -34,4 +34,4 @@ jobs:
         with:
           version-file: "pyproject.toml"
       - run: ruff check --output-format=github
-      - run: ruff format --check
+      - run: ruff format --diff --check .
