@@ -335,6 +335,7 @@ class SinglingOutMetric(BaseMetric):
             for path in self.synthetic_data_paths:
                 try:
                     result = self.evaluate(path)
+                    logger.info("Singling Out for %s Done.", model_name)
                     self.results.append(result)
                 except Exception:  # noqa: PERF203
                     logger.exception("Evaluation failed for %s", path)

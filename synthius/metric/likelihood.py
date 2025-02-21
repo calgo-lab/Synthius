@@ -147,6 +147,7 @@ class LikelihoodMetrics(BaseMetric):
         for metric in self.selected_metrics or metric_dispatch.keys():
             if metric in metric_dispatch:
                 results[metric] = metric_dispatch[metric](synthetic_data)
+                logger.warning("%s for %s Done.", metric, model_name)
             else:
                 logger.warning("Metric %s is not supported and will be skipped.", metric)
 

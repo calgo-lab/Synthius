@@ -80,7 +80,9 @@ class NSGAIISamplerHPOptimizer:
     # For calculating all metrics after optimization is complete
     # You can use the following code to calculate all metrics
     # Make sure you passed all required parameters during initialization
-    optimizer.evaluate_best_model_metrics()
+    result = optimizer.evaluate_best_model_metrics()
+    display(result.all_results)
+
     """
 
     def __init__(  # noqa: PLR0913
@@ -821,4 +823,4 @@ class NSGAIISamplerHPOptimizer:
 
         # Run metrics evaluation
         metrics_aggregator.run_all_with_original()
-        return metrics_aggregator.all_results
+        return metrics_aggregator
