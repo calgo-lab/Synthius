@@ -9,12 +9,10 @@ import pandas as pd
 from IPython.display import display
 from sdmetrics.single_table import (
     CategoricalCAP,
-    CategoricalEnsemble,
     CategoricalGeneralizedCAP,
     CategoricalKNN,
     CategoricalNB,
     CategoricalRF,
-    CategoricalSVM,
     CategoricalZeroCAP,
 )
 
@@ -30,14 +28,13 @@ class PrivacyAgainstInference(BaseMetric):
     being able to infer real, sensitive values. We assume that an attacker already possess a
     few columns of real data; they will combine it with the synthetic data to make educated guesses.
 
-    This class uses `CategoricalKNN`, `CategoricalNB`, `CategoricalRF`, `CategoricalEnsemble`,
+    This class uses `CategoricalKNN`, `CategoricalNB`, `CategoricalRF`,
     `CategoricalCAP`, `CategoricalZeroCAP` and `CategoricalGeneralizedCAP` from SDMetrics:
     https://docs.sdv.dev/sdmetrics
 
     - `CategoricalKNN` Uses k-nearest neighbors to determine inference risk.
     - `CategoricalNB` Assesses inference risk using Naive Bayes algorithm.
     - `CategoricalRF` Evaluates inference risk using a random forest classifier.
-    - `CategoricalEnsemble` Uses an ensemble of classifiers to estimate inference risk.
     - `CategoricalCAP` Quantifies risk of Correct Attribution Probability (CAP) attacks.
     - `CategoricalZeroCAP` Measures privacy risk when the synthetic data's equivalence class is empty.
     - `CategoricalGeneralizedCAP` Considers nearest matches using hamming distance when no exact matches exist.
@@ -210,51 +207,6 @@ class PrivacyAgainstInference(BaseMetric):
             sensitive_fields=self.sensitive_fields,
         )
 
-    def compute_categorical_svm(self: PrivacyAgainstInference, synthetic_data: pd.DataFrame) -> float:
-        """Computes the CategoricalSVM metric for the given synthetic data.
-
-        Args:
-            synthetic_data (pd.DataFrame): The synthetic data to evaluate.
-
-        Returns:
-            float: The computed CategoricalSVM score.
-        """
-        return CategoricalSVM.compute(
-            self.real_data,
-            synthetic_data,
-            key_fields=self.key_fields,
-            sensitive_fields=self.sensitive_fields,
-        )
-
-    def compute_categorical_ensemble(self: PrivacyAgainstInference, synthetic_data: pd.DataFrame) -> float:
-        """Computes the CategoricalEnsemble metric for the given synthetic data.
-
-        Args:
-            synthetic_data (pd.DataFrame): The synthetic data to evaluate.
-
-        Returns:
-            float: The computed CategoricalEnsemble score.
-        """
-        model_kwargs = {
-            "attackers": [
-                CategoricalCAP.MODEL,
-                CategoricalZeroCAP.MODEL,
-                CategoricalGeneralizedCAP.MODEL,
-                CategoricalNB.MODEL,
-                CategoricalKNN.MODEL,
-                CategoricalRF.MODEL,
-                CategoricalSVM.MODEL,
-            ],
-        }
-        return CategoricalEnsemble.compute(
-            self.real_data,
-            synthetic_data,
-            self.metadata,
-            self.key_fields,
-            self.sensitive_fields,
-            model_kwargs=model_kwargs,
-        )
-
     def evaluate(self: PrivacyAgainstInference, synthetic_data_path: Path) -> pd.DataFrame:
         """Evaluates a synthetic dataset against the real dataset using advanced quality metrics.
 
@@ -276,8 +228,6 @@ class PrivacyAgainstInference(BaseMetric):
             "CategoricalCAP": self.compute_categorical_cap,
             "CategoricalZeroCAP": self.compute_categorical_zero_cap,
             "CategoricalGeneralizedCAP": self.compute_categorical_generalized_cap,
-            "CategoricalSVM": self.compute_categorical_svm,
-            "CategoricalEnsemble": self.compute_categorical_ensemble,
         }
 
         for metric in self.selected_metrics or metric_dispatch.keys():
@@ -308,8 +258,6 @@ class PrivacyAgainstInference(BaseMetric):
                 "CategoricalCAP",
                 "CategoricalZeroCAP",
                 "CategoricalGeneralizedCAP",
-                "CategoricalSVM",
-                "CategoricalEnsemble",
             ]
 
             if self.selected_metrics:

@@ -10,7 +10,6 @@ from IPython.display import display
 from sdmetrics.single_table import (
     BNLikelihood,
     BNLogLikelihood,
-    GMLogLikelihood,
 )
 
 from synthius.metric.utils import BaseMetric, apply_preprocessing, generate_metadata, load_data, preprocess_data
@@ -28,9 +27,6 @@ class LikelihoodMetrics(BaseMetric):
 
     -`BNLogLikelihood` uses log of Bayesian Network to calculate the likelihood of the synthetic
     data belonging to the real data.
-
-    -`GMLogLikelihood` operates by fitting multiple GaussianMixture models to the real data.
-    It then evaluates the likelihood of the synthetic data conforming to these models.
 
     Attributes:
         real_data_path (Path): The path to the real dataset Or real data as pd.DataFrame.
@@ -91,17 +87,6 @@ class LikelihoodMetrics(BaseMetric):
 
         self.evaluate_all()
 
-    def compute_gm_log_likelihood(self: LikelihoodMetrics, synthetic_data: pd.DataFrame) -> float:
-        """Compute the GMLogLikelihood.
-
-        Args:
-            synthetic_data (pd.DataFrame): The synthetic data for comparison.
-
-        Returns:
-            float: The computed GMLogLikelihood.
-        """
-        return GMLogLikelihood.compute(self.real_data, synthetic_data, self.metadata)
-
     def compute_bn_likelihood(self: LikelihoodMetrics, synthetic_data: pd.DataFrame) -> float:
         """Compute the BNLikelihood.
 
@@ -141,7 +126,6 @@ class LikelihoodMetrics(BaseMetric):
         metric_dispatch = {
             "BN Likelihood": self.compute_bn_likelihood,
             "BN Log Likelihood": self.compute_bn_log_likelihood,
-            "GM Log Likelihood": self.compute_gm_log_likelihood,
         }
 
         for metric in self.selected_metrics or metric_dispatch.keys():
@@ -167,7 +151,6 @@ class LikelihoodMetrics(BaseMetric):
         available_metrics = [
             "BN Likelihood",
             "BN Log Likelihood",
-            "GM Log Likelihood",
         ]
         present_metrics = [metric for metric in available_metrics if metric in df_results.columns]
 
