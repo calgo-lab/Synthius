@@ -8,12 +8,12 @@ from .propensity import PropensityScore
 from .singlingout import SinglingOutMetric
 
 __all__ = [
-    "BasicQualityMetrics",
     "AdvancedQualityMetrics",
-    "LikelihoodMetrics",
-    "PropensityScore",
+    "BasicQualityMetrics",
     "DistanceMetrics",
-    "SinglingOutMetric",
+    "LikelihoodMetrics",
     "LinkabilityMetric",
     "PrivacyAgainstInference",
+    "PropensityScore",
+    "SinglingOutMetric",
 ]

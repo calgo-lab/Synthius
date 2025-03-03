@@ -47,7 +47,7 @@ class PropensityScore(BaseMetric):
         display_result (bool): A boolean indicating whether to display the results.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self: PropensityScore,
         real_data_path: Path | pd.DataFrame,
         synthetic_data_paths: list[Path],
