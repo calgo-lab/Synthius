@@ -33,5 +33,5 @@ jobs:
         uses: astral-sh/ruff-action@v3
         with:
           version-file: "pyproject.toml"
-      - run: ruff check --output-format=github
-      - run: ruff format --diff --check .
+      - run: ruff check --diff --output-format=github
+      - run: ruff format --diff --check
