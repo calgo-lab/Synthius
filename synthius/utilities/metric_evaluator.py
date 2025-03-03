@@ -1,25 +1,26 @@
 from __future__ import annotations
 
+import gc
 import io
 import logging
-import pickle
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar
 
+import dill as pickle
 import matplotlib.pyplot as plt
 import pandas as pd
+import torch
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from collections.abc import Callable
 
     from synthius.metric.utils import BaseMetric
 
 
 from pathlib import Path
-from typing import TypeVar
 
 from synthius.metric import (
     AdvancedQualityMetrics,
@@ -377,6 +378,9 @@ class MetricsAggregator:
                 pos_label=self.pos_label,
                 need_split=self.need_split,
             )
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            gc.collect()
 
         fig = ModelLoader.plot_metrics(pos_label=self.pos_label)
 
@@ -391,6 +395,10 @@ class MetricsAggregator:
                 self.all_results.loc[(metric_name, index), :] = row
         else:
             self.add_utility_metrics(result, metric_name=metric_name)
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
 
     def run_metrics_for_original(self: MetricsAggregator) -> None:
         """Run metrics for original dataset.
@@ -570,7 +578,7 @@ class MetricsAggregator:
 
         buf = io.BytesIO()
         if hasattr(self, "saved_plot"):
-            self.saved_plot.savefig(buf, format="png", bbox_inches="tight")
+            self.saved_plot.savefig(buf, format="png", dpi=600, bbox_inches="tight", transparent=True)
             buf.seek(0)
             data_to_save["plot"] = buf.read()
 
@@ -626,7 +634,7 @@ class MetricsAggregator:
         if show_plot and "plot" in loaded_data:
             plot_data = io.BytesIO(loaded_data["plot"])
             loaded_plot = Image.open(plot_data)
-            plt.figure(figsize=(10, 7))
+            plt.figure(figsize=(11, 6.55))
             plt.imshow(loaded_plot)
             plt.axis("off")
             plt.show()

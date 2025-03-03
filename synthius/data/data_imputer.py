@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -8,6 +9,8 @@ from sklearn.preprocessing import LabelEncoder, QuantileTransformer
 
 if TYPE_CHECKING:
     import pandas as pd
+
+logger = getLogger()
 
 
 class DataImputationPreprocessor:
@@ -32,7 +35,6 @@ class DataImputationPreprocessor:
         float_cols (pd.Index): Index of float columns.
         missing_value_proportions (pd.Series): Series representing the proportion of missing values per column.
         decimal_places (dict): Dictionary storing the number of decimal places for float columns.
-        original_id_values (pd.Series | None): Series storing original ID column values, if applicable.
         id_column_index (int | None): Index position of the ID column in the original data.
 
 
@@ -75,19 +77,16 @@ class DataImputationPreprocessor:
         self.missing_value_proportions: pd.Series = self.data.isna().mean()
         self.decimal_places: dict[str, int] = {}
         self.fill_values: dict[str, float] = {}
-        self.original_id_values: pd.Series | None = None
         self.id_column_index: int | None = None
 
         self.random_generator = np.random.default_rng()
 
         if self.id_column:
             if self.id_column in self.data.columns:
-                self.original_id_values = self.data[self.id_column].copy()
                 self.id_column_index = self.data.columns.get_loc(self.id_column)
                 self.data = self.data.drop(self.id_column, axis=1)
             else:
-                msg = f"The ID column '{self.id_column}' does not exist in the dataset."
-                raise ValueError(msg)
+                logger.warning("The ID column %s does not exist in the dataset.", self.id_column)
 
     def get_decimal_places(self: DataImputationPreprocessor, series: pd.Series) -> int:
         """Calculate the number of decimal places in a given series.
@@ -147,8 +146,10 @@ class DataImputationPreprocessor:
         """
         original_data: pd.DataFrame = processed_data.copy()
 
+        cols_to_transform = [col for col in original_data.columns if col != self.id_column]
+
         # Inverse transform numerical data
-        for col in original_data.columns:
+        for col in cols_to_transform:
             if col in self.float_cols or col in self.int_cols:
                 original_data[col] = self.scalers[col].inverse_transform(original_data[[col]])
                 # Round to original decimal places for float columns
@@ -159,13 +160,15 @@ class DataImputationPreprocessor:
                 original_data[col] = self.label_encoders[col].inverse_transform(original_data[col])
 
         # Convert boolean columns back to booleans
-        original_data[self.bool_cols] = original_data[self.bool_cols].round().astype(bool)
+        bool_cols = [col for col in self.bool_cols if col in original_data.columns and col != self.id_column]
+        original_data[bool_cols] = original_data[bool_cols].round().astype(bool)
 
         # Convert integer columns back to integers
-        original_data[self.int_cols] = original_data[self.int_cols].round().astype(int)
+        int_cols = [col for col in self.int_cols if col in original_data.columns and col != self.id_column]
+        original_data[int_cols] = original_data[int_cols].round().astype(int)
 
         # Reintroduce missing values based on proportions
-        for col in original_data.columns:
+        for col in cols_to_transform:
             missing_proportion = self.missing_value_proportions[col]
             if missing_proportion > 0:
                 filled_value = self.fill_values[col]

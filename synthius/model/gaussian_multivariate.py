@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from logging import getLogger
 from pathlib import Path
 
@@ -27,13 +26,15 @@ class GaussianMultivariateSynthesizer:
     def __init__(
         self: GaussianMultivariateSynthesizer,
         original_data: str | pd.DataFrame,
-        output_path: str | Path | None = None,
+        output_path: str | Path | None,
+        custom_name: str | None = None,
     ) -> None:
         """Initializes the synthesizer with paths to the original data and output directory.
 
         Parameters:
             original_data (str | pd.DataFrame): Data as dataframe or Path to the original dataset file.
-            output_path (str |Path): The directory path where the synthesized datasets will be saved.
+            output_path (str): The directory path where the synthesized datasets will be saved.
+            custom_name (str | None): A custom name to use for the synthesized dataset file. Defaults to "GaussianMultivariate".
         """
         if isinstance(original_data, str):
             self.original_data = Path(original_data)
@@ -42,6 +43,7 @@ class GaussianMultivariateSynthesizer:
             self.data = original_data
 
         self.output_path = Path(output_path) if output_path else Path.cwd()
+        self.custom_name = custom_name
 
     def synthesize(
         self: GaussianMultivariateSynthesizer,
@@ -65,41 +67,39 @@ class GaussianMultivariateSynthesizer:
         Returns:
             None
         """
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
+        transformer = ContinuousDataTransformer(self.data)
+        data_transformed = transformer.fit_transform()
 
-            transformer = ContinuousDataTransformer(self.data)
-            data_transformed = transformer.fit_transform()
+        total_samples = num_sample if num_sample is not None else len(data_transformed)
 
-            total_samples = num_sample if num_sample is not None else len(data_transformed)
+        copula = GaussianMultivariate()
+        synthetic_data = pd.DataFrame()
+        batch_size = 2_000
+        samples_generated = 0
 
-            copula = GaussianMultivariate()
-            synthetic_data = pd.DataFrame()
-            batch_size = 500
-            samples_generated = 0
+        while samples_generated < total_samples:
+            current_batch_size = min(batch_size, total_samples - samples_generated)
+            batch_data = data_transformed.iloc[:current_batch_size]
+            copula.fit(batch_data)
+            synthetic_batch = copula.sample(current_batch_size)
+            synthetic_data = pd.concat([synthetic_data, synthetic_batch], ignore_index=True)
+            samples_generated += current_batch_size
 
-            copula.fit(data_transformed)
+        # Clip the synthetic data to ensure it remains within valid range
+        for col in synthetic_data.columns:
+            min_value = data_transformed[col].min()
+            max_value = data_transformed[col].max()
+            synthetic_data[col] = synthetic_data[col].clip(min_value, max_value)
 
-            while samples_generated < total_samples:
-                current_batch_size = min(batch_size, total_samples - samples_generated)
-                synthetic_batch = copula.sample(current_batch_size)
-                synthetic_data = pd.concat([synthetic_data, synthetic_batch], ignore_index=True)
-                samples_generated += current_batch_size
+        synthetic_data = transformer.inverse_transform(synthetic_data)
 
-            # Clip the synthetic data to ensure it remains within valid range
-            for col in synthetic_data.columns:
-                min_value = data_transformed[col].min()
-                max_value = data_transformed[col].max()
-                synthetic_data[col] = synthetic_data[col].clip(min_value, max_value)
+        if adjust_ratio and target_column:
+            synthetic_data = self.adjust_ratio(synthetic_data, target_column)
 
-            synthetic_data = transformer.inverse_transform(synthetic_data)
-
-            if adjust_ratio and target_column:
-                synthetic_data = self.adjust_ratio(synthetic_data, target_column)
-
-            save_path = self.output_path / "GaussianMultivariate.csv"
-            synthetic_data.to_csv(save_path, index=False)
-            logger.info("Synthetic data saved to %s", save_path)
+        filename = self.custom_name if self.custom_name else "GaussianMultivariate.csv"
+        save_path = self.output_path / filename
+        synthetic_data.to_csv(save_path, index=False)
+        logger.info("Synthetic data saved to %s", save_path)
 
     def adjust_ratio(
         self: GaussianMultivariateSynthesizer,

@@ -350,6 +350,7 @@ class LinkabilityMetric(BaseMetric):
                 try:
                     result = self.evaluate(path)
                     self.results.append(result)
+                    logger.info("Linkability for %s Done.", path.stem)
                 except Exception:  # noqa: PERF203
                     logger.exception("Evaluation failed for %s", path)
 

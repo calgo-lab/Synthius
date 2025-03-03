@@ -35,10 +35,8 @@ class WGAN(Model):
     Usage Example:
     ----------------------
     ```python
-    wgan = WGAN(n_features=n_features)
-    train_dataset = data_batcher(data)
-
-    wgan.train(train_dataset, num_epochs=20_000, log_interval=300, log_training=True)
+    wgan = WGAN(n_features=n_features,num_epochs=20_000,)
+    wgan.train(train_dataset,log_interval=300, log_training=True)
 
     synthetic_samples = wgan.generate_samples(13_000)
     synthetic_data = pd.DataFrame(synthetic_samples, columns=data.columns
@@ -53,6 +51,7 @@ class WGAN(Model):
         batch_size: int = 256,
         critic_iters: int = 5,
         lambda_gp: float = 10.0,
+        num_epochs: int = 10_000,
     ) -> None:
         """Initialize the WGAN model.
 
@@ -62,6 +61,7 @@ class WGAN(Model):
             batch_size (int): Batch size for training. Defaults to 256.
             critic_iters (int): Number of critic iterations per generator iteration. Defaults to 5.
             lambda_gp (float): Gradient penalty coefficient. Defaults to 10.0.
+            num_epochs (int): Number of epochs to train for. Defaults to 10_000.
         """
         super().__init__()
         self.generator = self.Generator(n_features)
@@ -71,6 +71,7 @@ class WGAN(Model):
         self.lambda_gp = lambda_gp
         self.generator_optimizer = tf.keras.optimizers.Adam(1e-4, beta_1=0.5, beta_2=0.9)
         self.discriminator_optimizer = tf.keras.optimizers.Adam(1e-4, beta_1=0.5, beta_2=0.9)
+        self.num_epochs = num_epochs
 
     class Generator(Model):
         """Generator model for the WGAN.
@@ -159,17 +160,31 @@ class WGAN(Model):
         gradients_of_generator = tape.gradient(gen_loss, self.generator.trainable_variables)
         gradients_of_discriminator = tape.gradient(disc_loss, self.discriminator.trainable_variables)
 
-        self.generator_optimizer.apply_gradients(zip(gradients_of_generator, self.generator.trainable_variables))
+        self.generator_optimizer.apply_gradients(zip(gradients_of_generator, self.generator.trainable_variables, strict=False))
         self.discriminator_optimizer.apply_gradients(
-            zip(gradients_of_discriminator, self.discriminator.trainable_variables),
+            zip(gradients_of_discriminator, self.discriminator.trainable_variables, strict=False),
         )
 
         return gen_loss, disc_loss
 
+    @staticmethod
+    def data_batcher(data: pd.DataFrame, batch_size: int) -> Iterator[tf.Tensor]:
+        """Create a data batcher for training.
+
+        Args:
+            data (pd.DataFrame): Input data as DataFrame.
+            batch_size (int): Batch size. Defaults to 256.
+
+        Returns:
+            Iterator[tf.Tensor]: Data iterator.
+        """
+        dataset = tf.data.Dataset.from_tensor_slices(data)
+        dataset = dataset.shuffle(buffer_size=1024).batch(batch_size, drop_remainder=True).repeat()
+        return iter(dataset)
+
     def train(
         self: WGAN,
-        train_dataset: Iterator[tf.Tensor],
-        num_epochs: int = 10_000,
+        data: Iterator[tf.Tensor],
         log_interval: int = 500,
         *,
         log_training: bool = False,
@@ -177,12 +192,14 @@ class WGAN(Model):
         """Train the WGAN model.
 
         Args:
-            train_dataset (Iterator[tf.Tensor]): Training dataset iterator.
+            data (Iterator[tf.Tensor]): Training dataset iterator.
             num_epochs (int): Number of epochs to train for. Defaults to 10_000.
             log_interval (int, optional): Interval of epochs at which to log training progress. Defaults to 500.
             log_training (bool, optional): Whether to log training progress. Defaults to False.
         """
-        for epoch in range(num_epochs):
+        train_dataset = WGAN.data_batcher(data, batch_size=self.batch_size)
+
+        for epoch in range(self.num_epochs):
             for _ in range(self.critic_iters):
                 real_data = next(train_dataset)
                 g_loss, d_loss = self.train_step(real_data)
@@ -254,18 +271,3 @@ class WGAN(Model):
         gradients = gp_tape.gradient(pred, [interpolated])[0]
         norm = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1]))
         return tf.reduce_mean((norm - 1.0) ** 2)
-
-
-def data_batcher(data: pd.DataFrame, batch_size: int) -> Iterator[tf.Tensor]:
-    """Create a data batcher for training.
-
-    Args:
-        data (pd.DataFrame): Input data as DataFrame.
-        batch_size (int): Batch size. Defaults to 256.
-
-    Returns:
-        Iterator[tf.Tensor]: Data iterator.
-    """
-    dataset = tf.data.Dataset.from_tensor_slices(data)
-    dataset = dataset.shuffle(buffer_size=1024).batch(batch_size, drop_remainder=True).repeat()
-    return iter(dataset)

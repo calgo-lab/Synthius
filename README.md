@@ -42,6 +42,27 @@ To understand how to use this package, explore the three example Jupyter noteboo
 These notebooks serve as practical examples to demonstrate how to effectively utilize the toolkit.
 
 
+4. **[Optimization](examples/4_optimization.ipynb)**  
+   - Demonstrates how to optimize synthetic data generation using the **NSGAII** algorithm across five models:  
+     - **CopulaGAN**  
+     - **CTGAN**  
+     - **TVAE**  
+     - **WGAN**  
+     - **ARF**  
+
+   - The notebook covers two main processes:  
+
+     1. **Optimization**  
+        - Run the optimization process with at least **20 trials** for better results.  
+
+     2. **Evaluation of the Best Model**  
+        - After optimization, the best-performing model is selected, saved, and can be evaluated using:  
+          ```python
+          result = optimizer.evaluate_best_model_metrics()
+          ```  
+        - This will compute all evaluation metrics for the selected model.
+
+
 ### Additional Setup for Mac Users
 Mac users may encounter errors during installation. To resolve these issues, install the required dependencies and set up the environment:
 
