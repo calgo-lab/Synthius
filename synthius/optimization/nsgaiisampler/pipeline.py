@@ -711,14 +711,14 @@ class NSGAIISamplerHPOptimizer:
 
         if best_trial:
             idx = best_trial.number  # The "global trial number"
-            logging.info("Best trial index: %s", idx)
+            logger.info("Best trial index: %s", idx)
 
             # Save best model data
             self._save_best_model_data(best_trial)
 
             return best_trial
 
-        logging.warning("No best trial was found.")
+        logger.warning("No best trial was found.")
         return None
 
     def evaluate_best_model_metrics(
