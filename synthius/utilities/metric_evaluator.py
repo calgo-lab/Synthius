@@ -38,6 +38,7 @@ from synthius.model import ModelLoader
 warnings.filterwarnings("ignore")
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 R = TypeVar("R")
 
@@ -69,7 +70,7 @@ def handle_errors(func: Callable[..., R]) -> Callable[..., R | None]:
             return func(*args, **kwargs)
         except Exception as e:  # noqa: BLE001
             metric_name = func.__name__
-            logging.error("%s skipped due to %s", metric_name, e)  # noqa: TRY400
+            logger.error("%s skipped due to %s", metric_name, e)  # noqa: TRY400
             return None
 
     return wrapper_handle_errors
@@ -475,31 +476,31 @@ class MetricsAggregator:
             DataFrame: A pandas DataFrame containing the aggregated results from all metrics.
         """
         self.run_utility_metric()
-        logging.info("Utility Done")
+        logger.info("Utility Done")
 
         self.run_basic_quality_metrics()
-        logging.info("Basic Done")
+        logger.info("Basic Done")
 
         self.run_advanced_quality_metrics()
-        logging.info("Advance Done")
+        logger.info("Advance Done")
 
         self.run_likelihood_metrics()
-        logging.info("Likelihood Done")
+        logger.info("Likelihood Done")
 
         self.run_privacy_against_inference()
-        logging.info("Privacy Done")
+        logger.info("Privacy Done")
 
         self.run_propensity_score()
-        logging.info("Propensity Done")
+        logger.info("Propensity Done")
 
         self.run_distance_metrics()
-        logging.info("Distance Done")
+        logger.info("Distance Done")
 
         self.run_singling_out_metric()
-        logging.info("SinglingOut Done")
+        logger.info("SinglingOut Done")
 
         self.run_linkability_metric()
-        logging.info("Linkability Done")
+        logger.info("Linkability Done")
 
         return self.all_results.apply(lambda x: x.apply(format_value))
 
@@ -584,7 +585,7 @@ class MetricsAggregator:
 
         with file_path.open("wb") as f:
             pickle.dump(data_to_save, f)
-        logging.info("Results and all configuration data saved to %s", file_path)
+        logger.info("Results and all configuration data saved to %s", file_path)
 
     @classmethod
     def load_results(cls: type[MetricsAggregator], file_path: Path, *, show_plot: bool = True) -> MetricsAggregator:
@@ -693,6 +694,6 @@ class MetricsAggregator:
             else:
                 self.add_metrics(metric_instance)
 
-            logging.info("%s results updated or added.", metric_name)
+            logger.info("%s results updated or added.", metric_name)
         except Exception as e:  # noqa: BLE001
-            logging.error("Failed to run or update metric %s: %s", metric_class_name, e)  # noqa: TRY400
+            logger.error("Failed to run or update metric %s: %s", metric_class_name, e)  # noqa: TRY400

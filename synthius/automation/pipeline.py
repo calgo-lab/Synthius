@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from logging import getLogger
 from pathlib import Path
 
 import optuna
@@ -16,7 +15,7 @@ from synthius.model import ModelFitter
 from .metrics_map import DEFAULT_METRICS, METRIC_CLASS_MAP, METRIC_REQUIRED_PARAMS, METRICS_MAP
 from .models import MODEL_RUNNERS, run_model
 
-logger = getLogger()
+logger = logging.getLogger()
 
 
 class SyntheticModelFinder:
@@ -264,12 +263,12 @@ class SyntheticModelFinder:
 
         best_trials: list[optuna.trial.FrozenTrial] = study.best_trials
 
-        logging.info("Found %s optimal trial(s) on the Pareto front.", len(best_trials))
+        logger.info("Found %s optimal trial(s) on the Pareto front.", len(best_trials))
 
         for i, trial in enumerate(best_trials):
-            logging.info("Trial %s: Model -> %s", i + 1, trial.params["model"])
+            logger.info("Trial %s: Model -> %s", i + 1, trial.params["model"])
             for metric, value in zip(self.selected_metrics, trial.values, strict=False):
-                logging.info("%s: %s", metric, value)
+                logger.info("%s: %s", metric, value)
 
         if self.utility_op:
             ModelFitter(
@@ -358,8 +357,8 @@ class SyntheticModelFinder:
         best_trial = self.optimize_models()
 
         if best_trial:
-            logging.info("Best Model Selected Automatically: %s", best_trial.params["model"])
+            logger.info("Best Model Selected Automatically: %s", best_trial.params["model"])
             return best_trial
 
-        logging.warning("No best trial was found.")
+        logger.warning("No best trial was found.")
         return None
