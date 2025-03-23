@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "synthius"
-version = "0.2.0"
+version = "0.3.0"
 description = "A toolkit for generating and evaluating synthetic data in terms of utility, privacy, and similarity"
 authors = ["Maryam Mohebi <maryam@mohebi.me>"]
 readme = "README.md"
