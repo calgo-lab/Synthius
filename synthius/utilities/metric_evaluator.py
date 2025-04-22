@@ -31,6 +31,7 @@ from synthius.metric import (
     PrivacyAgainstInference,
     PropensityScore,
     SinglingOutMetric,
+    InferenceMetric
 )
 from synthius.metric.utils import format_value, generate_metadata, load_data
 from synthius.model import ModelLoader
@@ -50,6 +51,7 @@ METRIC_CLASSES = {
     "PrivacyAgainstInference": PrivacyAgainstInference,
     "PropensityScore": PropensityScore,
     "SinglingOutMetric": SinglingOutMetric,
+    "InferenceMetric": InferenceMetric
 }
 
 
@@ -91,6 +93,8 @@ class MetricsAggregator:
         linkability_n_neighbors (int): Number of neighbors considered in linkability metric.
         linkability_n_attacks (Optional[int]): Number of attack iterations for linkability metric.
         linkability_aux_cols (list[list[str]]): Auxiliary columns for linkability evaluation.
+        inference_n_attacks (Optional[int]): Number of attack iterations for inference metric.
+        inference_all_columns (List[str]): A list of all possible columns needed for the InferenceMetric.
         id_column (Optional[str]): Identifier column in the datasets.
         utility_test_path (Path): Path to the utility test dataset file.
         utility_models_path (Path): Path to the directory containing the utility models.
@@ -117,6 +121,8 @@ class MetricsAggregator:
         linkability_n_neighbors=50,
         linkability_n_attacks=None,
         linkability_aux_cols=aux_cols,
+        inference_n_attacks=inference_n_attacks,
+        inference_all_columns=inference_all_columns,
         id_column=ID,
         utility_test_path=test_data,
         utility_models_path=models_path,
@@ -171,6 +177,8 @@ class MetricsAggregator:
         linkability_n_neighbors: int,
         linkability_n_attacks: int | None,
         linkability_aux_cols: list[list[str]],
+        inference_n_attacks: int | None,
+        inference_all_columns: list[str],
         id_column: str | None,
         utility_test_path: Path,
         utility_models_path: Path,
@@ -198,6 +206,9 @@ class MetricsAggregator:
         self.linkability_n_neighbors = linkability_n_neighbors
         self.linkability_n_attacks = linkability_n_attacks
         self.linkability_aux_cols = linkability_aux_cols
+
+        self.inference_n_attacks = inference_n_attacks
+        self.inference_all_columns = inference_all_columns
 
         self.id_column = id_column
         self.all_results = pd.DataFrame()
@@ -363,6 +374,24 @@ class MetricsAggregator:
             display_result=False,
         )
         self.add_metrics(linkability_metric)
+
+    def run_inference_metric(self: MetricsAggregator) -> None:
+        metrics_per_secret = {}
+        for secret in self.inference_all_columns:
+            metrics_per_secret[secret] = []
+            for i in range(self.inference_n_attacks):
+                inference_metric = InferenceMetric(
+                    real_data_path=self.real_data_path,
+                    synthetic_data_paths=self.synthetic_data_paths,
+                    control_data_path=self.control_data,
+                    secret=secret,
+                    aux_cols=[col for col in self.inference_all_columns if col != secret],
+                    n_attacks=1,
+                    want_parallel=self.want_parallel,
+                    display_result=False,
+                )
+                metrics_per_secret[secret].append(inference_metric.results)
+        self.add_metrics(inference_metric) #todo handle this last
 
     def run_utility_metric(self: MetricsAggregator) -> None:
         """Runs the utility metric evaluation."""

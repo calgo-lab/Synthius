@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Tuple, List
+from typing import Optional
 
 import pandas as pd
-from anonymeter.evaluators import LinkabilityEvaluator
+from anonymeter.evaluators import InferenceEvaluator
 
 from synthius.metric.utils import apply_preprocessing, load_data, preprocess_data
 from synthius.metric.utils.anonymeter_metric import AnonymeterMetric
@@ -20,90 +20,57 @@ logger.addHandler(stream_handler)
 pd.set_option("future.no_silent_downcasting", True)  # noqa: FBT003
 
 
-class LinkabilityMetric(AnonymeterMetric):
-    """A class to compute `Linkability Risk` for synthetic data compared to real data.
+class InferenceMetric(AnonymeterMetric):
+    """A class to compute `InferenceMetric Risk` for synthetic data compared to real data.
 
     Adapted from Anonymeter:
     https://github.com/statice/anonymeter
 
     This involves assessing privacy risks by comparing synthetic datasets against a real dataset and a control dataset.
 
-    This evaluator checks if it's possible to link records from two vertically split parts of the original dataset
-    using the synthetic data. It measures the risk of reconnecting these split records based on their closest neighbors
-    in the synthetic data.
-
-    Outputs:
-
-    - `Main Attack`:    This uses the synthetic dataset to guess information about records in the original dataset.
-                        It's the primary evaluation of how much private information the synthetic data reveals.
-    - `Control Attack`: This uses the synthetic dataset to guess information about records in the control dataset
-                        (a subset of the original data not used for generating synthetic data). It helps to
-                        differentiate between what an attacker learns from the utility of the synthetic data and what
-                        indicates actual privacy leakage.
-    - `Baseline Attack`: This is a naive attack where guesses are made randomly without using the synthetic data.
-                        It serves as a sanity check to ensure that the main attack's success rate is meaningful.
-
-    The `.risk()` method provides an estimate of the privacy risk. For example:
-
-    ```
-    PrivacyRisk(value=0.0, ci=(0.0, 0.023886115062824436))
-    ```
-    This means:
-    - `value=0.0`: The estimated privacy risk is 0 (no risk detected).
-    - `ci=(0.0, 0.023886115062824436)`: The 95% confidence interval ranges from 0.0 to approximately 0.024,
-    indicating the uncertainty in the risk estimate.
-
-    Example of result interpretation:
-
-    ```
-    Success rate of main attack: SuccessRate(value=0.04152244529323714, error=0.017062327237406746)
-    Success rate of baseline attack: SuccessRate(value=0.009766424188006807, error=0.00772382791604657)
-    Success rate of control attack: SuccessRate(value=0.04303265336542551, error=0.017370801326913685)
-    ```
-    This means:
-    - `Main Attack Success Rate`: 4.15% with an error margin of ±1.71%
-    - `Baseline Attack Success Rate`: 0.98% with an error margin of ±0.77%
-    - `Control Attack Success Rate`: 4.30% with an error margin of ±1.74%
+    This evaluator measures the risk that the attacker can learn the attributes of a target record in the original data
+    based on the knowledge from the synthetic data and the partial knowledge of some attributes of the
+    target record (the auxiliary information).
 
 
     Attributes:
         real_data_path (Path): The path to the real dataset Or real data as pd.DataFrame.
         synthetic_data_paths (List[Path]): A list of paths to the synthetic datasets.
         control_data_path (Path): The path to the control dataset.
-        aux_cols (List[List[str]]): Auxiliary columns for evaluation.
-                                    It specify what the attacker knows about its target, i.e. which columns are known
+        aux_cols (List[str]): Auxiliary columns for evaluation.
+                                    It specifies what the attacker knows about its target, i.e. which columns are known
                                     to the attacker.
-        n_attacks (int | None): Number of records to attack.
-                                If None each record in the original dataset will be attacked.
-        n_neighbors (int): The number of closest neighbors to include in the analysis.
+        secret: The "secret" column that the attacker should guess.
+        regression: Whether the `secret` is continuous (True) or categorical (False).
+        n_attacks int: Number of attack attempts.
         results (List[dict]): A list to store the computed metrics results.
         selected_metrics (list[str]): A list of metrics to evaluate. If None, all metrics are evaluated.
         want_parallel (bool): A boolean indicating whether to use parallel processing.
         display_result (bool): A boolean indicating whether to display the results.
     """
 
-    def __init__(  # noqa: PLR0913
-        self: LinkabilityMetric,
-        real_data_path: Path | pd.DataFrame,
-        synthetic_data_paths: list[Path],
-        aux_cols: List[List[str], List[str]],
-        n_neighbors: int,
-        n_attacks: int | None = None,
-        control_data_path: Path | None = None,
-        selected_metrics: list[str] | None = None,
-        *,
-        want_parallel: bool = False,
-        display_result: bool = True,
-    ) -> None:
-        """Initializes the LinkabilityMetric class by setting paths, auxiliary columns, and other configurations.
+    def __init__(self: InferenceMetric,
+                 real_data_path: Path | pd.DataFrame,
+                 synthetic_data_paths: list[Path],
+                 aux_cols: list[str],
+                 secret: str,
+                 n_attacks: int,
+                 regression: Optional[bool] = None,
+                 control_data_path: Path | None = None,
+                 selected_metrics: list[str] | None = None,
+                 *,
+                 want_parallel: bool = False,
+                 display_result: bool = True) -> None:
+        """Initializes the InferenceMetric class by setting paths, auxiliary columns, and other configurations.
 
         Args:
             real_data_path (Path | pd.DataFrame): The file path to the real dataset or real data as pd.DataFrame.
             synthetic_data_paths (List[Path]): A list of paths to the synthetic datasets.
-            aux_cols (List[List[str]]): Auxiliary columns for evaluation.
-                                        It specify what the attacker knows about its target, i.e. which columns are
+            aux_cols (List[str]): Auxiliary columns for evaluation.
+                                        It specifies what the attacker knows about its target, i.e. which columns are
                                         known to the attacker.
-            n_neighbors (int): The number of closest neighbors to include in the analysis.
+            secret: The "secret" column that the attacker should guess.
+            regression: Whether the `secret` is continuous (True) or categorical (False).
             n_attacks (int | None): Number of records to attack.
                                     If None each record in the original dataset will be attacked.
                                     If control data is provided, sampling will also be done on the control dataset.
@@ -131,7 +98,7 @@ class LinkabilityMetric(AnonymeterMetric):
 
         self.real_data, self.fill_values = preprocess_data(self.real_data, need_clean_columns=True)
 
-        self.control_data_path: Path | None = control_data_path
+        self.control_data = None
         if control_data_path:
             self.control_data = apply_preprocessing(control_data_path, self.fill_values, need_clean_columns=True)
             control_size = len(self.control_data) - 1
@@ -141,7 +108,8 @@ class LinkabilityMetric(AnonymeterMetric):
             self.n_attacks = min(n_attacks, original_size) if n_attacks is not None else original_size
 
         self.aux_cols = self.clean_list(aux_cols)
-        self.n_neighbors = n_neighbors
+        self.secret = secret
+        self.regression = regression
 
         self.want_parallel = want_parallel
         self.display_result = display_result
@@ -149,34 +117,31 @@ class LinkabilityMetric(AnonymeterMetric):
 
         self.selected_metrics = selected_metrics
 
-        LinkabilityMetric.__name__ = "Linkability"
+        InferenceMetric.__name__ = "Inference"
 
         self.evaluate_all()
 
     @staticmethod
-    def clean_list(aux_cols: List[List[str], List[str]]) -> Tuple[List[str], List[str]]:
+    def clean_list(aux_cols: list[str]) -> list[str]:
         """Cleans a list of auxiliary column lists by removing unwanted characters.
 
         Args:
-            aux_cols (Tuple[List[str], List[str]]): A list of lists containing auxiliary column names.
+            aux_cols (List[str]): A list of auxiliary column names.
 
         Returns:
-            Tuple[List[str], List[str]]: Cleaned list of lists with auxiliary column names.
+            List[str]: Cleaned list with the auxiliary column names.
         """
-        cleaned_cols = []
-        for sublist in aux_cols:
-            cleaned_sublist = []
-            for item in sublist:
-                cleaned_item = re.sub(r"[-./]", "", item)
-                cleaned_sublist.append(cleaned_item)
-            cleaned_cols.append(cleaned_sublist)
-        return tuple(cleaned_cols)
+        clean_cols = []
+        for item in aux_cols:
+            cleaned_item = re.sub(r"[-./]", "", item)
+            clean_cols.append(cleaned_item)
+        return clean_cols
 
     def evaluate(
-        self: LinkabilityMetric,
-        synthetic_data_path: Path,
+            self: InferenceMetric,
+            synthetic_data_path: Path,
     ) -> dict[str, str | float]:
-        """Evaluates a synthetic dataset against the real dataset using linkability metrics.
+        """Evaluates a synthetic dataset against the real dataset using Inference metrics.
 
         Args:
             synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
@@ -187,24 +152,15 @@ class LinkabilityMetric(AnonymeterMetric):
         synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values, need_clean_columns=True).copy()
         model_name = synthetic_data_path.stem
 
-        if self.control_data_path:
-            evaluator = LinkabilityEvaluator(
-                ori=self.real_data,
-                syn=synthetic_data,
-                control=self.control_data,
-                aux_cols=self.aux_cols,
-                n_attacks=self.n_attacks,
-                n_neighbors=self.n_neighbors,
-            )
-        else:
-            evaluator = LinkabilityEvaluator(
-                ori=self.real_data,
-                syn=synthetic_data,
-                aux_cols=self.aux_cols,
-                n_attacks=self.n_attacks,
-                n_neighbors=self.n_neighbors,
-            )
-
+        evaluator = InferenceEvaluator(
+            ori=self.real_data,
+            syn=synthetic_data,
+            control=self.control_data,
+            aux_cols=self.aux_cols,
+            n_attacks=self.n_attacks,
+            secret=self.secret,
+            regression=self.regression
+        )
         evaluator.evaluate(n_jobs=-2)  # n_jobs follow joblib convention. -1 = all cores, -2 = all except one
 
         risk = evaluator.risk(confidence_level=0.95)
@@ -220,7 +176,7 @@ class LinkabilityMetric(AnonymeterMetric):
             "Baseline Attack Error ±": round(res.baseline_rate[1], 6),
         }
 
-        if self.control_data_path:
+        if self.control_data is not None:
             results.update(
                 {
                     "Control Attack Success Rate": round(res.control_rate[0], 6),

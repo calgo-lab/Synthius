@@ -6,6 +6,7 @@ from .linkability import LinkabilityMetric
 from .privacy_against_inference import PrivacyAgainstInference
 from .propensity import PropensityScore
 from .singlingout import SinglingOutMetric
+from .inference import InferenceMetric
 
 __all__ = [
     "AdvancedQualityMetrics",
@@ -16,4 +17,5 @@ __all__ = [
     "PrivacyAgainstInference",
     "PropensityScore",
     "SinglingOutMetric",
+    "InferenceMetric"
 ]
