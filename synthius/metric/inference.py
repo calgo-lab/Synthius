@@ -97,10 +97,12 @@ class InferenceMetric(AnonymeterMetric):
         self.results: list[dict[str, str | float]] = []
 
         self.real_data, self.fill_values = preprocess_data(self.real_data, need_clean_columns=True)
+        self.real_data.columns = self.clean_list(self.real_data.columns)
 
         self.control_data = None
         if control_data_path:
             self.control_data = apply_preprocessing(control_data_path, self.fill_values, need_clean_columns=True)
+            self.control_data.columns = self.clean_list(self.control_data.columns)
             control_size = len(self.control_data) - 1
             self.n_attacks = min(n_attacks, control_size) if n_attacks is not None else control_size
         else:

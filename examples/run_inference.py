@@ -35,13 +35,15 @@ def get_synt_paths(synt_path: Path) -> list[Path]:
 def run_for_secret(ori_path: Path,
                    synt_paths: list[Path],
                    secret: str,
-                   aux_columns: list[str]) -> list[dict[str, str | float]]:
+                   aux_columns: list[str],
+                   regression: bool) -> list[dict[str, str | float]]:
     """Runs the Inference attacks for a single `secret` feature.
 
     :param ori_path: The path where the original data is.
     :param synt_paths: The path where the synthetic data is.
     :param secret: The "sensitive" parameter which should be used for the attack.
     :param aux_columns: The auxiliary columns used for the attack.
+    :param regression: Whether the `secret` is a numeric column.
     :return:
         The results from the attack in a form of a list of dictionaries (InferenceMetric::results for more details).
     """
@@ -50,7 +52,8 @@ def run_for_secret(ori_path: Path,
                            control_data_path=ori_path / "test.csv",
                            secret=secret,
                            aux_cols=aux_columns,
-                           n_attacks=n_attacks).results
+                           n_attacks=n_attacks,
+                           regression=regression).results
 
 
 def run_single_inference(ori_name: str, synt_name: str) -> None:
@@ -60,17 +63,19 @@ def run_single_inference(ori_name: str, synt_name: str) -> None:
     results_path = results_base_path / synt_name
     results_path.mkdir(parents=True, exist_ok=True)
 
-    all_columns = utils.clean_columns(pd.read_csv(control_path)).columns
+    control_data = pd.read_csv(control_path)
+    all_columns = utils.clean_columns(control_data).columns
     metrics_per_secret = {}
     for secret in all_columns:
-        print(secret)
-        metrics_per_secret[secret] = []
-        aux_columns = [c for c in all_columns if c != secret]
-        output = run_for_secret(ori_path, synt_paths, secret, aux_columns)
-        metrics_per_secret[secret].append(output)
-        with open(results_path / f"inference_{secret}.json", "w") as f:
-            print(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}.json'}")
-            json.dump(output, f, indent=2)
+            print(secret)
+            regression = True if control_data[secret].dtype.kind in 'iuf' else False
+            metrics_per_secret[secret] = []
+            aux_columns = [c for c in all_columns if c != secret]
+            output = run_for_secret(ori_path, synt_paths, secret, aux_columns, regression)
+            metrics_per_secret[secret].append(output)
+            with open(results_path / f"inference_{secret}.json", "w") as f:
+                print(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}.json'}")
+                json.dump(output, f, indent=2)
 
     with open(results_path / "inference.json", "w") as f:
         print(f"Storing all results for {ori_name} under {results_path / 'inference.json'}")
@@ -79,4 +84,5 @@ def run_single_inference(ori_name: str, synt_name: str) -> None:
 
 if __name__ == '__main__':
     for k, v in datasets.items():
+        print(k)
         run_single_inference(k, v)
