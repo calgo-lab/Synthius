@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import logging
 
 import pandas as pd
 
@@ -19,6 +20,12 @@ synt_base_path = base_path / "data/synthetic"
 results_base_path = base_path / "results/attribute_inference"
 n_attacks = 6_000
 
+logger = logging.getLogger("anonymeter")
+logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+logger.addHandler(stream_handler)
+
 
 def get_synt_paths(synt_path: Path) -> list[Path]:
     return [
@@ -36,7 +43,7 @@ def run_for_secret(ori_path: Path,
                    synt_paths: list[Path],
                    secret: str,
                    aux_columns: list[str],
-                   regression: bool) -> list[dict[str, str | float]]:
+                   regression: bool) -> InferenceMetric:
     """Runs the Inference attacks for a single `secret` feature.
 
     :param ori_path: The path where the original data is.
@@ -53,7 +60,7 @@ def run_for_secret(ori_path: Path,
                            secret=secret,
                            aux_cols=aux_columns,
                            n_attacks=n_attacks,
-                           regression=regression).results
+                           regression=regression)
 
 
 def run_single_inference(ori_name: str, synt_name: str) -> None:
@@ -66,23 +73,36 @@ def run_single_inference(ori_name: str, synt_name: str) -> None:
     control_data = pd.read_csv(control_path)
     all_columns = utils.clean_columns(control_data).columns
     metrics_per_secret = {}
+    grouped_metrics_per_secret = {}
     for secret in all_columns:
-            print(secret)
+            logger.info(secret)
             regression = True if control_data[secret].dtype.kind in 'iuf' else False
             metrics_per_secret[secret] = []
+            grouped_metrics_per_secret[secret] = []
             aux_columns = [c for c in all_columns if c != secret]
-            output = run_for_secret(ori_path, synt_paths, secret, aux_columns, regression)
+
+            inference_metric = run_for_secret(ori_path, synt_paths, secret, aux_columns, regression)
+            output = inference_metric.results
+            output_grouped = inference_metric.grouped_results
             metrics_per_secret[secret].append(output)
+            grouped_metrics_per_secret[secret].append(output_grouped)
+
             with open(results_path / f"inference_{secret}.json", "w") as f:
-                print(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}.json'}")
+                logger.info(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}.json'}")
                 json.dump(output, f, indent=2)
+            with open(results_path / f"inference_{secret}_grouped.json", "w") as f:
+                logger.info(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}_grouped.json'}")
+                json.dump(output_grouped, f, indent=2)
 
     with open(results_path / "inference.json", "w") as f:
-        print(f"Storing all results for {ori_name} under {results_path / 'inference.json'}")
+        logger.info(f"Storing all results for {ori_name} under {results_path / 'inference.json'}")
         json.dump(metrics_per_secret, f, indent=2)
+    with open(results_path / "inference_grouped.json", "w") as f:
+        logger.info(f"Storing all results for {ori_name} under {results_path / 'inference_grouped.json'}")
+        json.dump(grouped_metrics_per_secret, f, indent=2)
 
 
 if __name__ == '__main__':
     for k, v in datasets.items():
-        print(k)
+        logger.info(k)
         run_single_inference(k, v)

@@ -121,6 +121,7 @@ class InferenceMetric(AnonymeterMetric):
 
         InferenceMetric.__name__ = "Inference"
 
+        self.grouped_results = []
         self.evaluate_all()
 
     @staticmethod
@@ -168,6 +169,23 @@ class InferenceMetric(AnonymeterMetric):
         risk = evaluator.risk(confidence_level=0.95)
         res = evaluator.results()
 
+        filtered_results = self.format_results(model_name, risk, res)
+        filtered_results["meta"] = {}
+        filtered_results["meta"]["guess_ids"] = evaluator._guesses_idx_success.flatten().tolist()
+        filtered_results["meta"]["guess_ids_control"] = evaluator._guesses_idx_control.flatten().tolist()
+        filtered_results["meta"]["target_ids"] = evaluator._target.index.tolist()
+        filtered_results["meta"]["target_ids_control"] = evaluator._target_control.index.tolist()
+        self.results.append(filtered_results)
+
+        grouped_results = evaluator.risk_for_groups()
+        grouped_results_filtered = {}
+        for group, res_dict in grouped_results.items():
+            grouped_results_filtered[group] = self.format_results(model_name, res_dict["risk"], res_dict["results"])
+        self.grouped_results.append(grouped_results_filtered)
+
+        return filtered_results
+
+    def format_results(self, model_name, risk, res):
         results = {
             "Model Name": model_name,
             "Privacy Risk": round(risk.value, 6),
@@ -186,7 +204,7 @@ class InferenceMetric(AnonymeterMetric):
                 },
             )
 
-        # Filter only explicitly selected metrics
+            # Filter only explicitly selected metrics
         if self.selected_metrics:
             filtered_results = {
                 "Model Name": model_name,
@@ -195,5 +213,4 @@ class InferenceMetric(AnonymeterMetric):
         else:
             filtered_results = results
 
-        self.results.append(filtered_results)
         return filtered_results
