@@ -7,15 +7,14 @@ from typing import Optional
 
 import pandas as pd
 from anonymeter.evaluators import InferenceEvaluator
+from autogluon.tabular import TabularPredictor
 
 from synthius.metric.utils import apply_preprocessing, load_data, preprocess_data
 from synthius.metric.utils.anonymeter_metric import AnonymeterMetric
 
-logger = logging.getLogger("anonymeter")
-logger.setLevel(logging.DEBUG)
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.DEBUG)
-logger.addHandler(stream_handler)
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S")
 
 pd.set_option("future.no_silent_downcasting", True)  # noqa: FBT003
 
@@ -60,7 +59,9 @@ class InferenceMetric(AnonymeterMetric):
                  selected_metrics: list[str] | None = None,
                  *,
                  want_parallel: bool = False,
-                 display_result: bool = True) -> None:
+                 display_result: bool = True,
+                 use_custom_model: bool = False,
+                 sample_attacks: bool = True) -> None:
         """Initializes the InferenceMetric class by setting paths, auxiliary columns, and other configurations.
 
         Args:
@@ -79,6 +80,8 @@ class InferenceMetric(AnonymeterMetric):
                                     all metrics are evaluated.
             want_parallel (bool): Whether to use parallel processing. The default is False.
             display_result (bool): Whether to display the results. The default is True.
+            use_custom_model (bool): Whether to use a custom model for the inference attack.
+            sample_attacks (bool): Whether to sample the real and control data to perform the attacks.
         """
         super().__init__()
         if isinstance(real_data_path, Path):
@@ -113,15 +116,18 @@ class InferenceMetric(AnonymeterMetric):
         self.secret = secret
         self.regression = regression
 
+        self.use_custom_model = use_custom_model
+        self.sample_attacks = sample_attacks
+
         self.want_parallel = want_parallel
         self.display_result = display_result
         self.pivoted_results = None
 
         self.selected_metrics = selected_metrics
 
-        InferenceMetric.__name__ = "Inference"
+        InferenceMetric.__name__ = "Inference Attack"
 
-        self.grouped_results = []
+        self.grouped_results = {}
         self.evaluate_all()
 
     @staticmethod
@@ -155,6 +161,16 @@ class InferenceMetric(AnonymeterMetric):
         synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values, need_clean_columns=True).copy()
         model_name = synthetic_data_path.stem
 
+        predictor = None
+        if self.use_custom_model:
+            logging.info(f"Fitting an XGB predictor on the synthetic dataset... for {self.secret}")
+            predictor = TabularPredictor(label=self.secret)
+            predictor.fit(
+                train_data=synthetic_data,
+                hyperparameters={
+                    "XGB": {},
+                }
+            )
         evaluator = InferenceEvaluator(
             ori=self.real_data,
             syn=synthetic_data,
@@ -162,26 +178,27 @@ class InferenceMetric(AnonymeterMetric):
             aux_cols=self.aux_cols,
             n_attacks=self.n_attacks,
             secret=self.secret,
-            regression=self.regression
+            regression=self.regression,
+            ml_model=predictor,
+            sample_attacks=self.sample_attacks
         )
         evaluator.evaluate(n_jobs=-2)  # n_jobs follow joblib convention. -1 = all cores, -2 = all except one
 
         risk = evaluator.risk(confidence_level=0.95)
         res = evaluator.results()
-
         filtered_results = self.format_results(model_name, risk, res)
         filtered_results["meta"] = {}
-        filtered_results["meta"]["guess_ids"] = evaluator._guesses_idx_success.flatten().tolist()
-        filtered_results["meta"]["guess_ids_control"] = evaluator._guesses_idx_control.flatten().tolist()
-        filtered_results["meta"]["target_ids"] = evaluator._target.index.tolist()
-        filtered_results["meta"]["target_ids_control"] = evaluator._target_control.index.tolist()
+        filtered_results["meta"]["guesses"] = evaluator._guesses_success.to_list()
+        filtered_results["meta"]["guess_control"] = evaluator._guesses_control.to_list()
+        filtered_results["meta"]["target_ids"] = evaluator._target.index.to_list()
+        filtered_results["meta"]["target_ids_control"] = evaluator._target_control.index.to_list()
         self.results.append(filtered_results)
 
         grouped_results = evaluator.risk_for_groups()
         grouped_results_filtered = {}
         for group, res_dict in grouped_results.items():
             grouped_results_filtered[group] = self.format_results(model_name, res_dict["risk"], res_dict["results"])
-        self.grouped_results.append(grouped_results_filtered)
+        self.grouped_results[model_name] = grouped_results_filtered
 
         return filtered_results
 

@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import logging
+from pathlib import Path
 
 import pandas as pd
 
@@ -36,14 +36,16 @@ def get_synt_paths(synt_path: Path) -> list[Path]:
         synt_path / "GaussianMultivariate.csv",
         synt_path / "TVAE.csv",
         synt_path / "WGAN.csv",
-    ]
+        ]
 
 
 def run_for_secret(ori_path: Path,
                    synt_paths: list[Path],
                    secret: str,
                    aux_columns: list[str],
-                   regression: bool) -> InferenceMetric:
+                   regression: bool,
+                   use_custom_model: bool,
+                   sample_attacks: bool) -> InferenceMetric:
     """Runs the Inference attacks for a single `secret` feature.
 
     :param ori_path: The path where the original data is.
@@ -51,6 +53,9 @@ def run_for_secret(ori_path: Path,
     :param secret: The "sensitive" parameter which should be used for the attack.
     :param aux_columns: The auxiliary columns used for the attack.
     :param regression: Whether the `secret` is a numeric column.
+    :param use_custom_model: Whether to use a custom (Autogluon XGB) model for the attack.
+    :param sample_attacks: Whether to sample the attacks during inference,
+        i.e predict inference for all samples in  ori and synt, or predict just for a subsample
     :return:
         The results from the attack in a form of a list of dictionaries (InferenceMetric::results for more details).
     """
@@ -60,10 +65,12 @@ def run_for_secret(ori_path: Path,
                            secret=secret,
                            aux_cols=aux_columns,
                            n_attacks=n_attacks,
-                           regression=regression)
+                           regression=regression,
+                           use_custom_model = use_custom_model,
+                           sample_attacks=sample_attacks)
 
 
-def run_single_inference(ori_name: str, synt_name: str) -> None:
+def run_single_inference(ori_name: str, synt_name: str, use_custom_model: bool, sample_attacks: bool) -> None:
     ori_path = ori_base_path / ori_name
     control_path = ori_path / "test.csv"
     synt_paths = get_synt_paths(synt_base_path / synt_name)
@@ -75,24 +82,30 @@ def run_single_inference(ori_name: str, synt_name: str) -> None:
     metrics_per_secret = {}
     grouped_metrics_per_secret = {}
     for secret in all_columns:
-            logger.info(secret)
-            regression = True if control_data[secret].dtype.kind in 'iuf' else False
-            metrics_per_secret[secret] = []
-            grouped_metrics_per_secret[secret] = []
-            aux_columns = [c for c in all_columns if c != secret]
+        logger.info(secret)
+        regression = True if control_data[secret].dtype.kind in 'iuf' else False
+        metrics_per_secret[secret] = []
+        grouped_metrics_per_secret[secret] = []
+        aux_columns = [c for c in all_columns if c != secret]
 
-            inference_metric = run_for_secret(ori_path, synt_paths, secret, aux_columns, regression)
-            output = inference_metric.results
-            output_grouped = inference_metric.grouped_results
-            metrics_per_secret[secret].append(output)
-            grouped_metrics_per_secret[secret].append(output_grouped)
+        inference_metric = run_for_secret(ori_path=ori_path,
+                                          synt_paths=synt_paths,
+                                          secret=secret,
+                                          aux_columns=aux_columns,
+                                          regression=regression,
+                                          use_custom_model=use_custom_model,
+                                          sample_attacks=sample_attacks)
+        output = inference_metric.results
+        output_grouped = inference_metric.grouped_results
+        metrics_per_secret[secret].append(output)
+        grouped_metrics_per_secret[secret].append(output_grouped)
 
-            with open(results_path / f"inference_{secret}.json", "w") as f:
-                logger.info(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}.json'}")
-                json.dump(output, f, indent=2)
-            with open(results_path / f"inference_{secret}_grouped.json", "w") as f:
-                logger.info(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}_grouped.json'}")
-                json.dump(output_grouped, f, indent=2)
+        with open(results_path / f"inference_{secret}.json", "w") as f:
+            logger.info(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}.json'}")
+            json.dump(output, f, indent=2)
+        with open(results_path / f"inference_{secret}_grouped.json", "w") as f:
+            logger.info(f"Storing results for {ori_name}::{secret} under {results_path / f'inference_{secret}_grouped.json'}")
+            json.dump(output_grouped, f, indent=2)
 
     with open(results_path / "inference.json", "w") as f:
         logger.info(f"Storing all results for {ori_name} under {results_path / 'inference.json'}")
@@ -105,4 +118,4 @@ def run_single_inference(ori_name: str, synt_name: str) -> None:
 if __name__ == '__main__':
     for k, v in datasets.items():
         logger.info(k)
-        run_single_inference(k, v)
+        run_single_inference(k, v, use_custom_model=True, sample_attacks=False)

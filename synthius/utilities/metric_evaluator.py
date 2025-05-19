@@ -5,7 +5,7 @@ import io
 import logging
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Optional
 
 import dill as pickle
 import matplotlib.pyplot as plt
@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from synthius.metric.utils import BaseMetric
-
 
 from pathlib import Path
 
@@ -33,12 +32,14 @@ from synthius.metric import (
     SinglingOutMetric,
     InferenceMetric
 )
-from synthius.metric.utils import format_value, generate_metadata, load_data
+from synthius.metric.utils import format_value, generate_metadata, load_data, clean_columns
 from synthius.model import ModelLoader
 
 warnings.filterwarnings("ignore")
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S")
 
 R = TypeVar("R")
 
@@ -95,6 +96,8 @@ class MetricsAggregator:
         linkability_aux_cols (list[list[str]]): Auxiliary columns for linkability evaluation.
         inference_n_attacks (Optional[int]): Number of attack iterations for inference metric.
         inference_all_columns (List[str]): A list of all possible columns needed for the InferenceMetric.
+        inference_sample_attacks (bool): Whether to sample the number of records to be used for the inference attack.
+        inference_use_custom_model (bool): Whether to use a custom (XGBoost) model to perform the inference attack.
         id_column (Optional[str]): Identifier column in the datasets.
         utility_test_path (Path): Path to the utility test dataset file.
         utility_models_path (Path): Path to the directory containing the utility models.
@@ -164,30 +167,32 @@ class MetricsAggregator:
     """
 
     def __init__(  # noqa: PLR0913
-        self: MetricsAggregator,
-        real_data_path: Path,
-        synthetic_data_paths: list[Path],
-        control_data: Path | None,
-        key_fields: list[str],
-        sensitive_fields: list[str],
-        distance_scaler: str,
-        singlingout_mode: str,
-        singlingout_n_attacks: int,
-        singlingout_n_cols: int | None,
-        linkability_n_neighbors: int,
-        linkability_n_attacks: int | None,
-        linkability_aux_cols: list[list[str]],
-        inference_n_attacks: int | None,
-        inference_all_columns: list[str],
-        id_column: str | None,
-        utility_test_path: Path,
-        utility_models_path: Path,
-        label_column: str,
-        *,
-        want_parallel: bool | None = None,
-        pos_label: bool | str = True,
-        need_split: bool = True,
-        load_data_now: bool = True,
+            self: MetricsAggregator,
+            real_data_path: Path,
+            synthetic_data_paths: list[Path],
+            control_data: Path | None,
+            key_fields: list[str],
+            sensitive_fields: list[str],
+            distance_scaler: str,
+            singlingout_mode: str,
+            singlingout_n_attacks: int,
+            singlingout_n_cols: int | None,
+            linkability_n_neighbors: int,
+            linkability_n_attacks: int | None,
+            linkability_aux_cols: list[list[str]],
+            inference_n_attacks: int | None,
+            inference_all_columns: list[str],
+            inference_sample_attacks: bool,
+            inference_use_custom_model: bool,
+            id_column: str | None,
+            utility_test_path: Path,
+            utility_models_path: Path,
+            label_column: str,
+            *,
+            want_parallel: bool | None = None,
+            pos_label: bool | str = True,
+            need_split: bool = True,
+            load_data_now: bool = True,
     ) -> None:
         """Initializes the MetricsAggregator with dataset paths, fields, and configuration for metrics."""
         self.real_data_path = real_data_path
@@ -209,6 +214,8 @@ class MetricsAggregator:
 
         self.inference_n_attacks = inference_n_attacks
         self.inference_all_columns = inference_all_columns
+        self.inference_sample_attacks = inference_sample_attacks
+        self.inference_use_custom_model = inference_use_custom_model
 
         self.id_column = id_column
         self.all_results = pd.DataFrame()
@@ -232,11 +239,13 @@ class MetricsAggregator:
 
         self.drop_original_for_utility = True
 
-    def add_metrics(self: MetricsAggregator, metric_class: BaseMetric) -> None:
+    def add_metrics(self: MetricsAggregator, metric_class: BaseMetric, column: Optional[str] = "") -> None:
         """Adds results from a metric evaluation to the aggregated results.
 
         Args:
             metric_class (BaseMetric): An instance of a metric class that has executed its evaluation.
+            column (str, optional): The column name for the computer metric.
+                This is applicable for the Inference metric as it is run for all columns individually.
         """
         if hasattr(metric_class, "pivoted_results") and metric_class.pivoted_results is not None:
             df_results = metric_class.pivoted_results.copy()
@@ -245,6 +254,8 @@ class MetricsAggregator:
             # Add 'Metric Type' as a second level of the index
             df_results = df_results.copy()
             df_results["Metric Type"] = metric_type
+            # Add the column for which the metric was run for. If this is empty
+            df_results["column"] = column
             df_results = df_results.set_index("Metric Type", append=True)
             df_results = df_results.reorder_levels(["Metric Type", "Metric"], axis=0)
 
@@ -377,21 +388,28 @@ class MetricsAggregator:
 
     def run_inference_metric(self: MetricsAggregator) -> None:
         metrics_per_secret = {}
+        control_data = pd.read_csv(self.control_data)
+        control_data.columns = clean_columns(control_data).columns
+
         for secret in self.inference_all_columns:
+            logging.info("Running inference metric for secret %s", secret)
             metrics_per_secret[secret] = []
-            for i in range(self.inference_n_attacks):
-                inference_metric = InferenceMetric(
-                    real_data_path=self.real_data_path,
-                    synthetic_data_paths=self.synthetic_data_paths,
-                    control_data_path=self.control_data,
-                    secret=secret,
-                    aux_cols=[col for col in self.inference_all_columns if col != secret],
-                    n_attacks=1,
-                    want_parallel=self.want_parallel,
-                    display_result=False,
-                )
-                metrics_per_secret[secret].append(inference_metric.results)
-        self.add_metrics(inference_metric) #todo handle this last
+            # Categorical or numerical(regression) column?
+            regression = True if control_data[secret].dtype.kind in 'iuf' else False
+            inference_metric = InferenceMetric(
+                real_data_path=self.real_data_path,
+                synthetic_data_paths=self.synthetic_data_paths,
+                control_data_path=self.control_data,
+                secret=secret,
+                aux_cols=[col for col in self.inference_all_columns if col != secret],
+                n_attacks=self.inference_n_attacks,
+                want_parallel=self.want_parallel,
+                display_result=False,
+                use_custom_model=self.inference_use_custom_model,
+                regression=regression,
+                sample_attacks=self.inference_sample_attacks
+            )
+            self.add_metrics(inference_metric, column=secret)
 
     def run_utility_metric(self: MetricsAggregator) -> None:
         """Runs the utility metric evaluation."""
@@ -463,6 +481,10 @@ class MetricsAggregator:
             label_column=self.label_column,
             want_parallel=self.want_parallel,
             need_split=self.need_split,
+            inference_n_attacks=self.inference_n_attacks,
+            inference_all_columns=self.inference_all_columns,
+            inference_sample_attacks=self.inference_sample_attacks,
+            inference_use_custom_model=self.inference_use_custom_model
         )
 
         # Skip running utility metrics
@@ -475,6 +497,7 @@ class MetricsAggregator:
             temp_aggregator.run_distance_metrics,
             temp_aggregator.run_singling_out_metric,
             temp_aggregator.run_linkability_metric,
+            temp_aggregator.run_inference_metric,
         ]
 
         for metric_fn in metrics_to_run:
@@ -516,7 +539,7 @@ class MetricsAggregator:
         logging.info("Likelihood Done")
 
         self.run_privacy_against_inference()
-        logging.info("Privacy Done")
+        logging.info("Legacy (SDMetrics) Privacy Against Inference Done")
 
         self.run_propensity_score()
         logging.info("Propensity Done")
@@ -529,6 +552,9 @@ class MetricsAggregator:
 
         self.run_linkability_metric()
         logging.info("Linkability Done")
+
+        self.run_inference_metric()
+        logging.info("Inference Attack Done")
 
         return self.all_results.apply(lambda x: x.apply(format_value))
 
