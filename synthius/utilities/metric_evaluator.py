@@ -255,7 +255,8 @@ class MetricsAggregator:
             df_results = df_results.copy()
             df_results["Metric Type"] = metric_type
             # Add the column for which the metric was run for. If this is empty
-            df_results["column"] = column
+            if column:
+                df_results["Metric Type"] = df_results["Metric Type"].apply(lambda x: "{} | {}".format(x, column))
             df_results = df_results.set_index("Metric Type", append=True)
             df_results = df_results.reorder_levels(["Metric Type", "Metric"], axis=0)
 
@@ -489,12 +490,12 @@ class MetricsAggregator:
 
         # Skip running utility metrics
         metrics_to_run = [
-            temp_aggregator.run_basic_quality_metrics,
-            temp_aggregator.run_advanced_quality_metrics,
-            temp_aggregator.run_likelihood_metrics,
-            temp_aggregator.run_privacy_against_inference,
-            temp_aggregator.run_propensity_score,
-            temp_aggregator.run_distance_metrics,
+            # temp_aggregator.run_basic_quality_metrics,
+            # temp_aggregator.run_advanced_quality_metrics,
+            # temp_aggregator.run_likelihood_metrics,
+            # temp_aggregator.run_privacy_against_inference,
+            # temp_aggregator.run_propensity_score,
+            # temp_aggregator.run_distance_metrics,
             temp_aggregator.run_singling_out_metric,
             temp_aggregator.run_linkability_metric,
             temp_aggregator.run_inference_metric,
@@ -526,26 +527,26 @@ class MetricsAggregator:
         Returns:
             DataFrame: A pandas DataFrame containing the aggregated results from all metrics.
         """
-        self.run_utility_metric()
-        logging.info("Utility Done")
-
-        self.run_basic_quality_metrics()
-        logging.info("Basic Done")
-
-        self.run_advanced_quality_metrics()
-        logging.info("Advance Done")
-
-        self.run_likelihood_metrics()
-        logging.info("Likelihood Done")
-
-        self.run_privacy_against_inference()
-        logging.info("Legacy (SDMetrics) Privacy Against Inference Done")
-
-        self.run_propensity_score()
-        logging.info("Propensity Done")
-
-        self.run_distance_metrics()
-        logging.info("Distance Done")
+        # self.run_utility_metric()
+        # logging.info("Utility Done")
+        #
+        # self.run_basic_quality_metrics()
+        # logging.info("Basic Done")
+        #
+        # self.run_advanced_quality_metrics()
+        # logging.info("Advance Done")
+        #
+        # self.run_likelihood_metrics()
+        # logging.info("Likelihood Done")
+        #
+        # self.run_privacy_against_inference()
+        # logging.info("Legacy (SDMetrics) Privacy Against Inference Done")
+        #
+        # self.run_propensity_score()
+        # logging.info("Propensity Done")
+        #
+        # self.run_distance_metrics()
+        # logging.info("Distance Done")
 
         self.run_singling_out_metric()
         logging.info("SinglingOut Done")
