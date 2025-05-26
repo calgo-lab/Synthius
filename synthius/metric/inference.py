@@ -9,7 +9,7 @@ import pandas as pd
 from anonymeter.evaluators import InferenceEvaluator
 from autogluon.tabular import TabularPredictor
 
-from synthius.metric.utils import apply_preprocessing, load_data, preprocess_data
+from synthius.metric.utils import load_data
 from synthius.metric.utils.anonymeter_metric import AnonymeterMetric
 
 logging.basicConfig(level=logging.INFO,
@@ -84,6 +84,9 @@ class InferenceMetric(AnonymeterMetric):
             sample_attacks (bool): Whether to sample the real and control data to perform the attacks.
         """
         super().__init__()
+        self.aux_cols = self.clean_list(aux_cols)
+        self.secret = secret
+
         if isinstance(real_data_path, Path):
             self.real_data_path: Path = real_data_path
             self.real_data = load_data(real_data_path)
@@ -99,21 +102,23 @@ class InferenceMetric(AnonymeterMetric):
 
         self.results: list[dict[str, str | float]] = []
 
-        self.real_data, self.fill_values = preprocess_data(self.real_data, need_clean_columns=True)
+        # Drop na values
         self.real_data.columns = self.clean_list(self.real_data.columns)
+        self.real_data = self.real_data.dropna(subset=[self.secret])
+        logging.info(f"Real data size: {self.real_data.shape[0]}")
 
         self.control_data = None
         if control_data_path:
-            self.control_data = apply_preprocessing(control_data_path, self.fill_values, need_clean_columns=True)
+            self.control_data = load_data(control_data_path)
             self.control_data.columns = self.clean_list(self.control_data.columns)
+            self.control_data = self.control_data.dropna(subset=[self.secret])
+            logging.info(f"Control data size: {self.control_data.shape[0]}")
             control_size = len(self.control_data) - 1
             self.n_attacks = min(n_attacks, control_size) if n_attacks is not None else control_size
         else:
             original_size = len(self.real_data) - 1
             self.n_attacks = min(n_attacks, original_size) if n_attacks is not None else original_size
 
-        self.aux_cols = self.clean_list(aux_cols)
-        self.secret = secret
         self.regression = regression
 
         self.use_custom_model = use_custom_model
@@ -158,12 +163,17 @@ class InferenceMetric(AnonymeterMetric):
         Returns:
             dict[str, str | float]: A dictionary of computed metric scores or None if evaluation fails.
         """
-        synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values, need_clean_columns=True).copy()
+        synthetic_data = load_data(synthetic_data_path)
+        synthetic_data.columns = self.clean_list(synthetic_data.columns)
         model_name = synthetic_data_path.stem
 
         predictor = None
         if self.use_custom_model:
             logging.info(f"Fitting an XGB predictor on the synthetic dataset... for {self.secret}")
+            logging.warning(f"Dropping {synthetic_data[self.secret].isna().sum()} rows due to "
+                            f"missing values for {self.secret}.")
+            synthetic_data = synthetic_data[~synthetic_data[self.secret].isna()]
+            logging.warning(f"Training with {synthetic_data.shape[0]} samples.")
             predictor = TabularPredictor(label=self.secret)
             predictor.fit(
                 train_data=synthetic_data,
@@ -188,10 +198,10 @@ class InferenceMetric(AnonymeterMetric):
         res = evaluator.results()
         filtered_results = self.format_results(model_name, risk, res)
         filtered_results["meta"] = {}
-        filtered_results["meta"]["guesses"] = evaluator._guesses_success.to_list()
-        filtered_results["meta"]["guess_control"] = evaluator._guesses_control.to_list()
-        filtered_results["meta"]["target_ids"] = evaluator._target.index.to_list()
-        filtered_results["meta"]["target_ids_control"] = evaluator._target_control.index.to_list()
+        filtered_results["meta"]["guesses"] = evaluator.guesses_success.to_list()
+        filtered_results["meta"]["guesses_control"] = evaluator.guesses_control.to_list()
+        filtered_results["meta"]["target_ids"] = evaluator.target.index.to_list()
+        filtered_results["meta"]["target_ids_control"] = evaluator.target_control.index.to_list()
         self.results.append(filtered_results)
 
         grouped_results = evaluator.risk_for_groups()
