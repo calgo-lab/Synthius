@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path  # noqa: TC003
 
 import pandas as pd
-
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from IPython.display import display
 
 from synthius.metric.utils import BaseMetric
@@ -22,7 +21,11 @@ pd.set_option("future.no_silent_downcasting", True)  # noqa: FBT003
 class AnonymeterMetric(BaseMetric):
     """Base class for anonymeter metric classes."""
 
-    def __init__(self):
+    def __init__(self):  # noqa: ANN204
+        """A Parent class for all anonymeter metrics.
+
+        Implements evaluate_all, display_results and pivot_results.
+        For more information see InferenceMetric, LinkabilityMetric and SinglingOutMetric."""
         self.results = None
         self.selected_metrics = None
         self.pivoted_results = None
@@ -34,7 +37,11 @@ class AnonymeterMetric(BaseMetric):
             self: AnonymeterMetric,
             synthetic_data_path: Path,
     ) -> dict[str, str | float]:
-        raise NotImplementedError("Evaluation not implemented")
+        """Evaluates the synthetic data attack with the according (child) metric.
+
+        Implementation in the child classes: InferenceMetric, LinkabilityMetric and SinglingOutMetric"""
+        error_msg = "Evaluation not implemented"
+        raise NotImplementedError(error_msg)
 
     def pivot_results(self: AnonymeterMetric) -> pd.DataFrame:
         """Pivots the accumulated results to organize models as columns and metrics as rows.

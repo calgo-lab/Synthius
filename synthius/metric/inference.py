@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 from anonymeter.evaluators import InferenceEvaluator
+from anonymeter.stats.confidence import EvaluationResults, PrivacyRisk
 from autogluon.tabular import TabularPredictor
 
 from synthius.metric.utils import load_data
@@ -48,13 +48,13 @@ class InferenceMetric(AnonymeterMetric):
         display_result (bool): A boolean indicating whether to display the results.
     """
 
-    def __init__(self: InferenceMetric,
+    def __init__(self: InferenceMetric,  # noqa: PLR0913
                  real_data_path: Path | pd.DataFrame,
                  synthetic_data_paths: list[Path],
                  aux_cols: list[str],
                  secret: str,
                  n_attacks: int,
-                 regression: Optional[bool] = None,
+                 regression: bool | None = None,
                  control_data_path: Path | None = None,
                  selected_metrics: list[str] | None = None,
                  *,
@@ -170,8 +170,8 @@ class InferenceMetric(AnonymeterMetric):
         predictor = None
         if self.use_custom_model:
             logging.info(f"Fitting an XGB predictor on the synthetic dataset... for {self.secret}")
-            logging.warning(f"Dropping {synthetic_data[self.secret].isna().sum()} rows due to "
-                            f"missing values for {self.secret}.")
+            missing_rows = synthetic_data[self.secret].isna().sum()
+            logging.warning(f"Dropping {missing_rows} rows due to missing values for {self.secret}.")
             synthetic_data = synthetic_data[~synthetic_data[self.secret].isna()]
             logging.warning(f"Training with {synthetic_data.shape[0]} samples.")
             predictor = TabularPredictor(label=self.secret)
@@ -179,7 +179,7 @@ class InferenceMetric(AnonymeterMetric):
                 train_data=synthetic_data,
                 hyperparameters={
                     "XGB": {},
-                }
+                },
             )
         evaluator = InferenceEvaluator(
             ori=self.real_data,
@@ -190,7 +190,7 @@ class InferenceMetric(AnonymeterMetric):
             secret=self.secret,
             regression=self.regression,
             ml_model=predictor,
-            sample_attacks=self.sample_attacks
+            sample_attacks=self.sample_attacks,
         )
         evaluator.evaluate(n_jobs=-2)  # n_jobs follow joblib convention. -1 = all cores, -2 = all except one
 
@@ -212,7 +212,7 @@ class InferenceMetric(AnonymeterMetric):
 
         return filtered_results
 
-    def format_results(self, model_name, risk, res):
+    def format_results(self, model_name: str, risk: PrivacyRisk, res: EvaluationResults) -> dict[str, float]:
         results = {
             "Model Name": model_name,
             "Privacy Risk": round(risk.value, 6),

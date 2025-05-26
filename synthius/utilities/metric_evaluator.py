@@ -5,7 +5,7 @@ import io
 import logging
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING, Any, TypeVar, Optional
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import dill as pickle
 import matplotlib.pyplot as plt
@@ -25,14 +25,14 @@ from synthius.metric import (
     AdvancedQualityMetrics,
     BasicQualityMetrics,
     DistanceMetrics,
+    InferenceMetric,
     LikelihoodMetrics,
     LinkabilityMetric,
     PrivacyAgainstInference,
     PropensityScore,
     SinglingOutMetric,
-    InferenceMetric
 )
-from synthius.metric.utils import format_value, generate_metadata, load_data, clean_columns
+from synthius.metric.utils import clean_columns, format_value, generate_metadata, load_data
 from synthius.model import ModelLoader
 
 warnings.filterwarnings("ignore")
@@ -52,7 +52,7 @@ METRIC_CLASSES = {
     "PrivacyAgainstInference": PrivacyAgainstInference,
     "PropensityScore": PropensityScore,
     "SinglingOutMetric": SinglingOutMetric,
-    "InferenceMetric": InferenceMetric
+    "InferenceMetric": InferenceMetric,
 }
 
 
@@ -182,8 +182,8 @@ class MetricsAggregator:
             linkability_aux_cols: list[list[str]],
             inference_n_attacks: int | None,
             inference_all_columns: list[str],
-            inference_sample_attacks: bool,
-            inference_use_custom_model: bool,
+            inference_sample_attacks: bool,  # noqa: FBT001
+            inference_use_custom_model: bool,  # noqa: FBT001
             id_column: str | None,
             utility_test_path: Path,
             utility_models_path: Path,
@@ -239,7 +239,7 @@ class MetricsAggregator:
 
         self.drop_original_for_utility = True
 
-    def add_metrics(self: MetricsAggregator, metric_class: BaseMetric, column: Optional[str] = "") -> None:
+    def add_metrics(self: MetricsAggregator, metric_class: BaseMetric, column: str | None = "") -> None:
         """Adds results from a metric evaluation to the aggregated results.
 
         Args:
@@ -256,7 +256,7 @@ class MetricsAggregator:
             df_results["Metric Type"] = metric_type
             # Add the column for which the metric was run for. If this is empty
             if column:
-                df_results["Metric Type"] = df_results["Metric Type"].apply(lambda x: "{} | {}".format(x, column))
+                df_results["Metric Type"] = df_results["Metric Type"].apply(lambda x: f"{x} | {column}")
             df_results = df_results.set_index("Metric Type", append=True)
             df_results = df_results.reorder_levels(["Metric Type", "Metric"], axis=0)
 
@@ -388,6 +388,7 @@ class MetricsAggregator:
         self.add_metrics(linkability_metric)
 
     def run_inference_metric(self: MetricsAggregator) -> None:
+        """Runs the Inference Metric for every secret, adding its results to the aggregated output."""
         metrics_per_secret = {}
         control_data = pd.read_csv(self.control_data)
         control_data.columns = clean_columns(control_data).columns
@@ -396,7 +397,7 @@ class MetricsAggregator:
             logging.info("Running inference metric for secret %s", secret)
             metrics_per_secret[secret] = []
             # Categorical or numerical(regression) column?
-            regression = True if control_data[secret].dtype.kind in 'iuf' else False
+            regression = control_data[secret].dtype.kind in "iuf"
             inference_metric = InferenceMetric(
                 real_data_path=self.real_data_path,
                 synthetic_data_paths=self.synthetic_data_paths,
@@ -408,7 +409,7 @@ class MetricsAggregator:
                 display_result=False,
                 use_custom_model=self.inference_use_custom_model,
                 regression=regression,
-                sample_attacks=self.inference_sample_attacks
+                sample_attacks=self.inference_sample_attacks,
             )
             self.add_metrics(inference_metric, column=secret)
 
@@ -485,7 +486,7 @@ class MetricsAggregator:
             inference_n_attacks=self.inference_n_attacks,
             inference_all_columns=self.inference_all_columns,
             inference_sample_attacks=self.inference_sample_attacks,
-            inference_use_custom_model=self.inference_use_custom_model
+            inference_use_custom_model=self.inference_use_custom_model,
         )
 
         # Skip running utility metrics
