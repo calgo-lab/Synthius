@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import logging
 import re
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from anonymeter.evaluators import LinkabilityEvaluator
-from IPython.display import display
 
-from synthius.metric.utils import BaseMetric, apply_preprocessing, load_data, preprocess_data
+from synthius.metric.utils import apply_preprocessing, load_data, preprocess_data
+from synthius.metric.utils.anonymeter_metric import AnonymeterMetric
 
 logger = logging.getLogger("anonymeter")
 logger.setLevel(logging.DEBUG)
@@ -20,7 +20,7 @@ logger.addHandler(stream_handler)
 pd.set_option("future.no_silent_downcasting", True)  # noqa: FBT003
 
 
-class LinkabilityMetric(BaseMetric):
+class LinkabilityMetric(AnonymeterMetric):
     """A class to compute `Linkability Risk` for synthetic data compared to real data.
 
     Adapted from Anonymeter:
@@ -86,7 +86,7 @@ class LinkabilityMetric(BaseMetric):
         self: LinkabilityMetric,
         real_data_path: Path | pd.DataFrame,
         synthetic_data_paths: list[Path],
-        aux_cols: list[list[str]],
+        aux_cols: tuple[list[str], list[str]],
         n_neighbors: int,
         n_attacks: int | None = None,
         control_data_path: Path | None = None,
@@ -113,6 +113,7 @@ class LinkabilityMetric(BaseMetric):
             want_parallel (bool): Whether to use parallel processing. The default is False.
             display_result (bool): Whether to display the results. The default is True.
         """
+        super().__init__()
         if isinstance(real_data_path, Path):
             self.real_data_path: Path = real_data_path
             self.real_data = load_data(real_data_path)
@@ -126,7 +127,7 @@ class LinkabilityMetric(BaseMetric):
 
         self.synthetic_data_paths: list[Path] = synthetic_data_paths
 
-        self.results: list[dict[str, str | float]] = []
+        self.results: list[dict[str, Any]] = []
 
         self.real_data, self.fill_values = preprocess_data(self.real_data, need_clean_columns=True)
 
@@ -146,21 +147,21 @@ class LinkabilityMetric(BaseMetric):
         self.display_result = display_result
         self.pivoted_results = None
 
-        self.selected_metrics = selected_metrics
+        self.selected_metrics: list[str] | None = selected_metrics
 
         LinkabilityMetric.__name__ = "Linkability"
 
         self.evaluate_all()
 
     @staticmethod
-    def clean_list(aux_cols: list[list[str]]) -> list[list[str]]:
+    def clean_list(aux_cols: tuple[list[str], list[str]]) -> tuple[list[str], ...]:
         """Cleans a list of auxiliary column lists by removing unwanted characters.
 
         Args:
-            aux_cols (List[List[str]]): A list of lists containing auxiliary column names.
+            aux_cols (Tuple[List[str], List[str]]): A list of lists containing auxiliary column names.
 
         Returns:
-            List[List[str]]: Cleaned list of lists with auxiliary column names.
+            Tuple[List[str], List[str]]: Cleaned list of lists with auxiliary column names.
         """
         cleaned_cols = []
         for sublist in aux_cols:
@@ -169,19 +170,19 @@ class LinkabilityMetric(BaseMetric):
                 cleaned_item = re.sub(r"[-./]", "", item)
                 cleaned_sublist.append(cleaned_item)
             cleaned_cols.append(cleaned_sublist)
-        return cleaned_cols
+        return tuple(cleaned_cols)
 
     def evaluate(
         self: LinkabilityMetric,
         synthetic_data_path: Path,
-    ) -> dict[str, str | float]:
+    ) -> dict[str, Any]:
         """Evaluates a synthetic dataset against the real dataset using linkability metrics.
 
         Args:
             synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
 
         Returns:
-            dict[str, str | float]: A dictionary of computed metric scores or None if evaluation fails.
+            dict[str, Any]: A dictionary of computed metric scores or None if evaluation fails.
         """
         synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values, need_clean_columns=True).copy()
         model_name = synthetic_data_path.stem
@@ -238,129 +239,3 @@ class LinkabilityMetric(BaseMetric):
 
         self.results.append(filtered_results)
         return filtered_results
-
-    def pivot_results(self: LinkabilityMetric) -> pd.DataFrame:
-        """Pivots the accumulated results to organize models as columns and metrics as rows.
-
-        Returns:
-            pd.DataFrame: A pivoted DataFrame of the evaluation results.
-        """
-        try:
-            df_results = pd.DataFrame(self.results)
-
-            all_numeric_metrics = [
-                "Privacy Risk",
-                "Main Attack Success Rate",
-                "Main Attack Marginal Error ±",
-                "Baseline Attack Success Rate",
-                "Baseline Attack Error ±",
-                "Control Attack Success Rate",
-                "Control Attack Error ±",
-            ]
-            all_non_numeric_metrics = ["CI(95%)"]
-
-            numeric_metrics = [metric for metric in all_numeric_metrics if metric in df_results.columns]
-            non_numeric_metrics = [metric for metric in all_non_numeric_metrics if metric in df_results.columns]
-
-            # If selected_metrics is specified, filter again
-            if self.selected_metrics:
-                numeric_metrics = [metric for metric in numeric_metrics if metric in self.selected_metrics]
-                non_numeric_metrics = [metric for metric in non_numeric_metrics if metric in self.selected_metrics]
-
-            # Handle numeric metrics
-            if numeric_metrics:
-                df_results[numeric_metrics] = df_results[numeric_metrics].apply(pd.to_numeric, errors="coerce")
-
-                df_melted_numeric = df_results.melt(
-                    id_vars=["Model Name"],
-                    value_vars=numeric_metrics,
-                    var_name="Metric",
-                    value_name="Value",
-                )
-
-                pivoted_df_numeric = df_melted_numeric.pivot_table(
-                    index="Metric",
-                    columns="Model Name",
-                    values="Value",
-                    aggfunc="mean",  # Handle NaN gracefully
-                )
-            else:
-                pivoted_df_numeric = pd.DataFrame()
-
-            # Handle non-numeric metrics
-            if non_numeric_metrics:
-                df_melted_non_numeric = df_results.melt(
-                    id_vars=["Model Name"],
-                    value_vars=non_numeric_metrics,
-                    var_name="Metric",
-                    value_name="Value",
-                )
-
-                pivoted_df_non_numeric = df_melted_non_numeric.pivot_table(
-                    index="Metric",
-                    columns="Model Name",
-                    values="Value",
-                    aggfunc="first",  # First is okay for non-numeric
-                )
-            else:
-                pivoted_df_non_numeric = pd.DataFrame()
-
-            pivoted_df = pd.concat([pivoted_df_numeric, pivoted_df_non_numeric])
-
-            desired_order = [
-                "Privacy Risk",
-                "CI(95%)",
-                "Main Attack Success Rate",
-                "Main Attack Marginal Error ±",
-                "Baseline Attack Success Rate",
-                "Baseline Attack Error ±",
-                "Control Attack Success Rate",
-                "Control Attack Error ±",
-            ]
-            selected_order = [metric for metric in desired_order if metric in pivoted_df.index]
-
-            return pivoted_df.reindex(selected_order)
-
-        except Exception as e:
-            logger.exception("Error while pivoting the DataFrame: %s", e)  # noqa: TRY401
-            return pd.DataFrame()
-
-    def evaluate_all(self: LinkabilityMetric) -> None:
-        """Evaluates all synthetic datasets in parallel and stores the results."""
-        if self.want_parallel:
-            with ProcessPoolExecutor() as executor:
-                futures = {executor.submit(self.evaluate, path): path for path in self.synthetic_data_paths}
-                for future in as_completed(futures):
-                    path = futures[future]
-                    model_name = path.stem
-
-                    try:
-                        result = future.result()
-                        if result:
-                            self.results.append(result)
-                            logger.info("Linkability for %s Done.", model_name)
-
-                    except RuntimeError as ex:
-                        logger.exception("Evaluation failed for %s: %s", path, ex)  # noqa: TRY401
-                    except Exception as ex:
-                        logger.exception("An unexpected error occurred for %s: %s", path, ex)  # noqa: TRY401
-
-        else:
-            for path in self.synthetic_data_paths:
-                try:
-                    result = self.evaluate(path)
-                    self.results.append(result)
-                    logger.info("Linkability for %s Done.", path.stem)
-                except Exception:  # noqa: PERF203
-                    logger.exception("Evaluation failed for %s", path)
-
-        self.pivoted_results = self.pivot_results()
-        if self.display_result:
-            self.display_results()
-
-    def display_results(self: LinkabilityMetric) -> None:
-        """Displays the evaluation results."""
-        if self.pivoted_results is not None:
-            display(self.pivoted_results)
-        else:
-            logger.info("No results to display.")

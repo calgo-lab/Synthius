@@ -87,6 +87,7 @@ class NSGAIISamplerHPOptimizer:
 
     def __init__(  # noqa: PLR0913
         self: NSGAIISamplerHPOptimizer,
+        inference_all_columns: list[str],
         selected_metrics: list[str] | None = None,
         distance_scaler: str | None = None,
         singlingout_mode: str | None = None,
@@ -94,7 +95,10 @@ class NSGAIISamplerHPOptimizer:
         singlingout_n_cols: int | None = None,
         linkability_n_neighbors: int | None = None,
         linkability_n_attacks: int | None = None,
-        linkability_aux_cols: list[list[str]] | None = None,
+        linkability_aux_cols: tuple[list[str], list[str]] | None = None,
+        inference_n_attacks: int | None = None,
+        inference_sample_attacks: bool = False,  # noqa: FBT001, FBT002
+        inference_use_custom_model: bool = False,  # noqa: FBT001, FBT002
         key_fields: list[str] | None = None,
         sensitive_fields: list[str] | None = None,
         *,
@@ -113,6 +117,10 @@ class NSGAIISamplerHPOptimizer:
             linkability_n_neighbors (int | None): Number of neighbors for linkability metrics. Optional.
             linkability_n_attacks (int | None): Number of attacks for linkability metrics. Optional.
             linkability_aux_cols (list[list[str]] | None): Auxiliary columns for linkability metrics. Optional.
+            inference_n_attacks (Optional[int]): Number of attack iterations for inference metric.
+            inference_all_columns (List[str]): A list of all possible columns needed for the InferenceMetric.
+            inference_sample_attacks (bool): Whether to sample the number of records to be used for the inference attack.
+            inference_use_custom_model (bool): Whether to use a custom (XGBoost) model to perform the inference attack.
             key_fields (list[str] | None): List of key fields for metric evaluation. Optional.
             sensitive_fields (list[str] | None): List of sensitive fields for metric evaluation. Optional.
             linkability_metric: Whether to use linkability metrics. Defaults to False.
@@ -132,6 +140,11 @@ class NSGAIISamplerHPOptimizer:
 
         self.linkability_metric = linkability_metric
         self.singlingout_metric = singlingout_metric
+
+        self.inference_n_attacks = inference_n_attacks
+        self.inference_all_columns = inference_all_columns
+        self.inference_sample_attacks = inference_sample_attacks
+        self.inference_use_custom_model = inference_use_custom_model
 
         self.train_data: pd.DataFrame | None = None
         self.test_data: pd.DataFrame | None = None
@@ -684,7 +697,7 @@ class NSGAIISamplerHPOptimizer:
         self.id_column: str = id_column
 
         self.train_data.to_csv(self.output_path / "train.csv", index=False)
-        self.test_data.to_csv(self.output_path / "test.csv", index=False)
+        self.test_data.to_csv(self.output_path / "test.csv", index=False)  # type: ignore[union-attr]
 
         if num_sample is None:
             self.num_sample = len(self.train_data)
@@ -812,6 +825,10 @@ class NSGAIISamplerHPOptimizer:
             linkability_n_neighbors=self.linkability_n_neighbors,
             linkability_n_attacks=None,
             linkability_aux_cols=self.linkability_aux_cols,
+            inference_all_columns=self.inference_all_columns,
+            inference_use_custom_model=self.inference_use_custom_model,
+            inference_sample_attacks=self.inference_sample_attacks,
+            inference_n_attacks=self.inference_n_attacks,
             id_column=self.id_column,
             utility_test_path=test_path,
             utility_models_path=models_path,

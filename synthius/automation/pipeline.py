@@ -334,7 +334,7 @@ class SyntheticModelFinder:
         self.id_column: str = id_column
 
         self.train_data.to_csv(self.output_path / "train.csv", index=False)
-        self.test_data.to_csv(self.output_path / "test.csv", index=False)
+        self.test_data.to_csv(self.output_path / "test.csv", index=False)  # type: ignore[union-attr]
 
         if num_sample is None:
             self.num_sample = len(self.train_data)
