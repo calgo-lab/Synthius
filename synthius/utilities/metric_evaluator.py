@@ -503,7 +503,7 @@ class MetricsAggregator:
         ]
 
         for metric_fn in metrics_to_run:
-            metric_fn()  # type: ignore
+            metric_fn()  # type: ignore[operator]
 
         temp_results = temp_aggregator.all_results.copy()
         temp_results.columns = ["Original"]  # Rename columns to align with the "Original" dataset

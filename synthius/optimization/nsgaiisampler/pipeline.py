@@ -96,9 +96,9 @@ class NSGAIISamplerHPOptimizer:
         linkability_n_attacks: int | None = None,
         linkability_aux_cols: list[list[str]] | None = None,
         inference_n_attacks: int | None = None,
-        inference_all_columns: list[str] = None,
-        inference_sample_attacks: bool = False,  # noqa: FBT001
-        inference_use_custom_model: bool = False,  # noqa: FBT001
+        inference_all_columns: list[str] | None = None,
+        inference_sample_attacks: bool = False,  # noqa: FBT001, FBT002
+        inference_use_custom_model: bool = False,  # noqa: FBT001, FBT002
         key_fields: list[str] | None = None,
         sensitive_fields: list[str] | None = None,
         *,
@@ -697,7 +697,7 @@ class NSGAIISamplerHPOptimizer:
         self.id_column: str = id_column
 
         self.train_data.to_csv(self.output_path / "train.csv", index=False)
-        self.test_data.to_csv(self.output_path / "test.csv", index=False) # type: ignore
+        self.test_data.to_csv(self.output_path / "test.csv", index=False)  # type: ignore[union-attr]
 
         if num_sample is None:
             self.num_sample = len(self.train_data)

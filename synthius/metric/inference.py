@@ -46,7 +46,7 @@ class InferenceMetric(AnonymeterMetric):
         display_result (bool): A boolean indicating whether to display the results.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self: InferenceMetric,  # noqa: PLR0913
         real_data_path: Path | pd.DataFrame,
         synthetic_data_paths: list[Path],
@@ -61,7 +61,7 @@ class InferenceMetric(AnonymeterMetric):
         display_result: bool = True,
         use_custom_model: bool = False,
         sample_attacks: bool = True,
-    ) -> None:  # noqa: PLR0913
+    ) -> None:
         """Initializes the InferenceMetric class by setting paths, auxiliary columns, and other configurations.
 
         Args:
