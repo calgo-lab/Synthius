@@ -37,9 +37,7 @@ from synthius.model import ModelLoader
 
 warnings.filterwarnings("ignore")
 
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 R = TypeVar("R")
 
@@ -167,32 +165,32 @@ class MetricsAggregator:
     """
 
     def __init__(  # noqa: PLR0913
-            self: MetricsAggregator,
-            real_data_path: Path,
-            synthetic_data_paths: list[Path],
-            control_data: Path | None,
-            key_fields: list[str],
-            sensitive_fields: list[str],
-            distance_scaler: str,
-            singlingout_mode: str,
-            singlingout_n_attacks: int,
-            singlingout_n_cols: int | None,
-            linkability_n_neighbors: int,
-            linkability_n_attacks: int | None,
-            linkability_aux_cols: list[list[str]],
-            inference_n_attacks: int | None,
-            inference_all_columns: list[str],
-            inference_sample_attacks: bool,  # noqa: FBT001
-            inference_use_custom_model: bool,  # noqa: FBT001
-            id_column: str | None,
-            utility_test_path: Path,
-            utility_models_path: Path,
-            label_column: str,
-            *,
-            want_parallel: bool | None = None,
-            pos_label: bool | str = True,
-            need_split: bool = True,
-            load_data_now: bool = True,
+        self: MetricsAggregator,
+        real_data_path: Path,
+        synthetic_data_paths: list[Path],
+        control_data: Path | None,
+        key_fields: list[str],
+        sensitive_fields: list[str],
+        distance_scaler: str,
+        singlingout_mode: str,
+        singlingout_n_attacks: int,
+        singlingout_n_cols: int | None,
+        linkability_n_neighbors: int,
+        linkability_n_attacks: int | None,
+        linkability_aux_cols: list[list[str]],
+        inference_n_attacks: int | None,
+        inference_all_columns: list[str],
+        inference_sample_attacks: bool,  # noqa: FBT001
+        inference_use_custom_model: bool,  # noqa: FBT001
+        id_column: str | None,
+        utility_test_path: Path,
+        utility_models_path: Path,
+        label_column: str,
+        *,
+        want_parallel: bool | None = None,
+        pos_label: bool | str = True,
+        need_split: bool = True,
+        load_data_now: bool = True,
     ) -> None:
         """Initializes the MetricsAggregator with dataset paths, fields, and configuration for metrics."""
         self.real_data_path = real_data_path

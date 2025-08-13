@@ -35,8 +35,8 @@ class AnonymeterMetric(BaseMetric):
         self.synthetic_data_paths = []
 
     def evaluate(
-            self: AnonymeterMetric,
-            synthetic_data_path: Path,
+        self: AnonymeterMetric,
+        synthetic_data_path: Path,
     ) -> dict[str, str | float]:
         """Evaluates the synthetic data attack with the according (child) metric.
 
