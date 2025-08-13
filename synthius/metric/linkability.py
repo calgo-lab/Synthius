@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Tuple, List
 
 import pandas as pd
 from anonymeter.evaluators import LinkabilityEvaluator
@@ -86,7 +85,7 @@ class LinkabilityMetric(AnonymeterMetric):
         self: LinkabilityMetric,
         real_data_path: Path | pd.DataFrame,
         synthetic_data_paths: list[Path],
-        aux_cols: List[List[str], List[str]],
+        aux_cols: list[list[str], list[str]],
         n_neighbors: int,
         n_attacks: int | None = None,
         control_data_path: Path | None = None,
@@ -154,7 +153,7 @@ class LinkabilityMetric(AnonymeterMetric):
         self.evaluate_all()
 
     @staticmethod
-    def clean_list(aux_cols: List[List[str], List[str]]) -> Tuple[List[str], List[str]]:
+    def clean_list(aux_cols: list[list[str], list[str]]) -> tuple[list[str], list[str]]:
         """Cleans a list of auxiliary column lists by removing unwanted characters.
 
         Args:

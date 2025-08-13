@@ -25,7 +25,8 @@ class AnonymeterMetric(BaseMetric):
         """A Parent class for all anonymeter metrics.
 
         Implements evaluate_all, display_results and pivot_results.
-        For more information see InferenceMetric, LinkabilityMetric and SinglingOutMetric."""
+        For more information see InferenceMetric, LinkabilityMetric and SinglingOutMetric.
+        """
         self.results = None
         self.selected_metrics = None
         self.pivoted_results = None
@@ -39,7 +40,8 @@ class AnonymeterMetric(BaseMetric):
     ) -> dict[str, str | float]:
         """Evaluates the synthetic data attack with the according (child) metric.
 
-        Implementation in the child classes: InferenceMetric, LinkabilityMetric and SinglingOutMetric"""
+        Implementation in the child classes: InferenceMetric, LinkabilityMetric and SinglingOutMetric
+        """
         error_msg = "Evaluation not implemented"
         raise NotImplementedError(error_msg)
 

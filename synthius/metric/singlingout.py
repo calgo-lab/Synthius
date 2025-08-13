@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import pandas as pd
 from anonymeter.evaluators import SinglingOutEvaluator
-from IPython.display import display
 
-from synthius.metric.utils import BaseMetric, apply_preprocessing, load_data, preprocess_data
+from synthius.metric.utils import apply_preprocessing, load_data, preprocess_data
 from synthius.metric.utils.anonymeter_metric import AnonymeterMetric
 
 logger = logging.getLogger("anonymeter")

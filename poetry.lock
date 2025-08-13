@@ -189,8 +189,8 @@ notebooks = ["jupyterlab (>=3.4,<4.0)", "matplotlib (>=3.5,<4.0)", "seaborn (>=0
 [package.source]
 type = "git"
 url = "https://github.com/itrajanovska/anonymeter.git"
-reference = "main"
-resolved_reference = "1e79168232ea0e52cbb28d67cc54a4ba9b1283ea"
+reference = "v1.0.0"
+resolved_reference = "fc876cd7c288d423537517fce7424fe86b4ad536"
 
 [[package]]
 name = "anyio"
@@ -7402,4 +7402,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.12"
-content-hash = "8113e3afa6c8316c96afafc1c74b1c812adcf243aa06aab2681c8155cd55f8e4"
+content-hash = "c8a88a21ee8b7ccb836249142e376e22d69c57daf24ff56218a9e03067b95b3f"
