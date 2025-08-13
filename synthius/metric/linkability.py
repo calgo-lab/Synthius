@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from anonymeter.evaluators import LinkabilityEvaluator
@@ -126,7 +127,7 @@ class LinkabilityMetric(AnonymeterMetric):
 
         self.synthetic_data_paths: list[Path] = synthetic_data_paths
 
-        self.results: list[dict[str, str | float]] = []
+        self.results: list[dict[str, Any]] = []
 
         self.real_data, self.fill_values = preprocess_data(self.real_data, need_clean_columns=True)
 
@@ -146,7 +147,7 @@ class LinkabilityMetric(AnonymeterMetric):
         self.display_result = display_result
         self.pivoted_results = None
 
-        self.selected_metrics = selected_metrics
+        self.selected_metrics: list[str] | None = selected_metrics
 
         LinkabilityMetric.__name__ = "Linkability"
 
@@ -174,14 +175,14 @@ class LinkabilityMetric(AnonymeterMetric):
     def evaluate(
         self: LinkabilityMetric,
         synthetic_data_path: Path,
-    ) -> dict[str, str | float]:
+    ) -> dict[str, Any]:
         """Evaluates a synthetic dataset against the real dataset using linkability metrics.
 
         Args:
             synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
 
         Returns:
-            dict[str, str | float]: A dictionary of computed metric scores or None if evaluation fails.
+            dict[str, Any]: A dictionary of computed metric scores or None if evaluation fails.
         """
         synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values, need_clean_columns=True).copy()
         model_name = synthetic_data_path.stem

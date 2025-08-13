@@ -48,7 +48,7 @@ class InferenceMetric(AnonymeterMetric):
     """
 
     def __init__(  # noqa: PLR0913
-        self: InferenceMetric,  # noqa: PLR0913
+        self: InferenceMetric,
         real_data_path: Path | pd.DataFrame,
         synthetic_data_paths: list[Path],
         aux_cols: list[str],
@@ -101,7 +101,7 @@ class InferenceMetric(AnonymeterMetric):
 
         self.synthetic_data_paths: list[Path] = synthetic_data_paths
 
-        self.results: list[dict[str, dict | float]] = []
+        self.results: list[dict[str, Any]] = []
 
         # Drop na values
         self.real_data.columns = self.clean_list(self.real_data.columns)
@@ -155,14 +155,14 @@ class InferenceMetric(AnonymeterMetric):
     def evaluate(
         self: InferenceMetric,
         synthetic_data_path: Path,
-    ) -> dict[str, dict | float]:
+    ) -> dict[str, Any]:
         """Evaluates a synthetic dataset against the real dataset using Inference metrics.
 
         Args:
             synthetic_data_path (Path): The path to the synthetic dataset to evaluate.
 
         Returns:
-            dict[str, str | float]: A dictionary of computed metric scores or None if evaluation fails.
+            dict[str, Any]: A dictionary of computed metric scores or None if evaluation fails.
         """
         synthetic_data = load_data(synthetic_data_path)
         synthetic_data.columns = self.clean_list(synthetic_data.columns)

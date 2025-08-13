@@ -87,6 +87,7 @@ class NSGAIISamplerHPOptimizer:
 
     def __init__(  # noqa: PLR0913
         self: NSGAIISamplerHPOptimizer,
+        inference_all_columns: list[str],
         selected_metrics: list[str] | None = None,
         distance_scaler: str | None = None,
         singlingout_mode: str | None = None,
@@ -96,7 +97,6 @@ class NSGAIISamplerHPOptimizer:
         linkability_n_attacks: int | None = None,
         linkability_aux_cols: list[list[str]] | None = None,
         inference_n_attacks: int | None = None,
-        inference_all_columns: list[str] | None = None,
         inference_sample_attacks: bool = False,  # noqa: FBT001, FBT002
         inference_use_custom_model: bool = False,  # noqa: FBT001, FBT002
         key_fields: list[str] | None = None,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from anonymeter.evaluators import SinglingOutEvaluator
@@ -123,7 +124,7 @@ class SinglingOutMetric(AnonymeterMetric):
         self.n_attacks = n_attacks
         self.n_cols = n_cols
 
-        self.results: list[dict[str, str | float]] = []
+        self.results: list[dict[str, Any]] = []
 
         self.real_data, self.fill_values = preprocess_data(self.real_data, need_clean_columns=True)
 
@@ -134,7 +135,7 @@ class SinglingOutMetric(AnonymeterMetric):
         self.display_result = display_result
         self.pivoted_results = None
 
-        self.selected_metrics = selected_metrics
+        self.selected_metrics: list[str] | None = selected_metrics
 
         SinglingOutMetric.__name__ = "Singling Out"
 
@@ -143,14 +144,14 @@ class SinglingOutMetric(AnonymeterMetric):
     def evaluate(
         self: SinglingOutMetric,
         synthetic_data_path: Path,
-    ) -> dict[str, str | float]:
+    ) -> dict[str, Any]:
         """Evaluates a synthetic dataset against the real dataset using singling out metrics.
 
         Args:
             synthetic_data_path: The path to the synthetic dataset to evaluate.
 
         Returns:
-            dict[str, str | float]: A dictionary of computed metric scores or None if evaluation fails.
+            dict[str, Any]: A dictionary of computed metric scores or None if evaluation fails.
         """
         synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values, need_clean_columns=True).copy()
         model_name = synthetic_data_path.stem

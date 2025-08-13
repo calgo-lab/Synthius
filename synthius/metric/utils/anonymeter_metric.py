@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path  # noqa: TC003
+from typing import Any
 
 import pandas as pd
 from IPython.display import display
@@ -21,23 +22,23 @@ pd.set_option("future.no_silent_downcasting", True)  # noqa: FBT003
 class AnonymeterMetric(BaseMetric):
     """Base class for anonymeter metric classes."""
 
-    def __init__(self) -> None:  # noqa: ANN204
+    def __init__(self) -> None:
         """A Parent class for all anonymeter metrics.
 
         Implements evaluate_all, display_results and pivot_results.
         For more information see InferenceMetric, LinkabilityMetric and SinglingOutMetric.
         """
-        self.results = None
-        self.selected_metrics = None
+        self.results: list[dict[str, Any]] = []
+        self.selected_metrics: list[str] | None = None
         self.pivoted_results = None
         self.want_parallel = False
         self.display_result = False
-        self.synthetic_data_paths = []
+        self.synthetic_data_paths: list = []
 
     def evaluate(
         self: AnonymeterMetric,
         synthetic_data_path: Path,
-    ) -> dict[str, str | float]:
+    ) -> dict[str, Any]:
         """Evaluates the synthetic data attack with the according (child) metric.
 
         Implementation in the child classes: InferenceMetric, LinkabilityMetric and SinglingOutMetric
