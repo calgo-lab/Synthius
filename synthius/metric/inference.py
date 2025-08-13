@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from anonymeter.evaluators import InferenceEvaluator
@@ -212,7 +213,7 @@ class InferenceMetric(AnonymeterMetric):
 
         return filtered_results
 
-    def format_results(self, model_name: str, risk: PrivacyRisk, res: EvaluationResults) -> dict[str, dict | float]:
+    def format_results(self, model_name: str, risk: PrivacyRisk, res: EvaluationResults) -> dict[str, Any]:
         """Formats the results in a dictionary.
 
         Extracts information from `risk` and `res` and formats them into a structured dict.
