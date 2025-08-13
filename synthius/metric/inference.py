@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 from anonymeter.evaluators import InferenceEvaluator
-from anonymeter.stats.confidence import EvaluationResults, PrivacyRisk
+from anonymeter.stats.confidence import EvaluationResults, PrivacyRisk # noqa: TC002
 from autogluon.tabular import TabularPredictor
 
 from synthius.metric.utils import load_data
@@ -105,14 +105,14 @@ class InferenceMetric(AnonymeterMetric):
         # Drop na values
         self.real_data.columns = self.clean_list(self.real_data.columns)
         self.real_data = self.real_data.dropna(subset=[self.secret])
-        logging.info(f"Real data size: {self.real_data.shape[0]}")
+        logging.info("Real data size: %d", self.real_data.shape[0])
 
         self.control_data = None
         if control_data_path:
             self.control_data = load_data(control_data_path)
             self.control_data.columns = self.clean_list(self.control_data.columns)
             self.control_data = self.control_data.dropna(subset=[self.secret])
-            logging.info(f"Control data size: {self.control_data.shape[0]}")
+            logging.info("Control data size: %d", self.control_data.shape[0])
             control_size = len(self.control_data) - 1
             self.n_attacks = min(n_attacks, control_size) if n_attacks is not None else control_size
         else:
@@ -169,11 +169,11 @@ class InferenceMetric(AnonymeterMetric):
 
         predictor = None
         if self.use_custom_model:
-            logging.info(f"Fitting an XGB predictor on the synthetic dataset... for {self.secret}")
+            logging.info("Fitting an XGB predictor on the synthetic dataset... for %s", self.secret)
             missing_rows = synthetic_data[self.secret].isna().sum()
-            logging.warning(f"Dropping {missing_rows} rows due to missing values for {self.secret}.")
+            logging.warning("Dropping %d rows due to missing values for %s.", missing_rows, self.secret)
             synthetic_data = synthetic_data[~synthetic_data[self.secret].isna()]
-            logging.warning(f"Training with {synthetic_data.shape[0]} samples.")
+            logging.warning("Training with %d samples.", synthetic_data.shape[0])
             predictor = TabularPredictor(label=self.secret)
             predictor.fit(
                 train_data=synthetic_data,
@@ -213,6 +213,16 @@ class InferenceMetric(AnonymeterMetric):
         return filtered_results
 
     def format_results(self, model_name: str, risk: PrivacyRisk, res: EvaluationResults) -> dict[str, float]:
+        """Formats the results in a dictionary.
+
+        Extracts information from `risk` and `res` and formats them into a structured dict.
+
+        :param model_name: The name of the model.
+        :param risk: A PrivacyRisk object.
+        :param res: An EvaluationResults object.
+        :return:
+            A structured dict with the extracted information from `risk` and `res`.
+        """
         results = {
             "Model Name": model_name,
             "Privacy Risk": round(risk.value, 6),
