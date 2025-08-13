@@ -6,15 +6,13 @@ from pathlib import Path
 
 import pandas as pd
 from anonymeter.evaluators import InferenceEvaluator
-from anonymeter.stats.confidence import EvaluationResults, PrivacyRisk # noqa: TC002
+from anonymeter.stats.confidence import EvaluationResults, PrivacyRisk  # noqa: TC002
 from autogluon.tabular import TabularPredictor
 
 from synthius.metric.utils import load_data
 from synthius.metric.utils.anonymeter_metric import AnonymeterMetric
 
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 pd.set_option("future.no_silent_downcasting", True)  # noqa: FBT003
 
@@ -48,20 +46,22 @@ class InferenceMetric(AnonymeterMetric):
         display_result (bool): A boolean indicating whether to display the results.
     """
 
-    def __init__(self: InferenceMetric,  # noqa: PLR0913
-                 real_data_path: Path | pd.DataFrame,
-                 synthetic_data_paths: list[Path],
-                 aux_cols: list[str],
-                 secret: str,
-                 n_attacks: int,
-                 regression: bool | None = None,
-                 control_data_path: Path | None = None,
-                 selected_metrics: list[str] | None = None,
-                 *,
-                 want_parallel: bool = False,
-                 display_result: bool = True,
-                 use_custom_model: bool = False,
-                 sample_attacks: bool = True) -> None:
+    def __init__(
+        self: InferenceMetric,  # noqa: PLR0913
+        real_data_path: Path | pd.DataFrame,
+        synthetic_data_paths: list[Path],
+        aux_cols: list[str],
+        secret: str,
+        n_attacks: int,
+        regression: bool | None = None,
+        control_data_path: Path | None = None,
+        selected_metrics: list[str] | None = None,
+        *,
+        want_parallel: bool = False,
+        display_result: bool = True,
+        use_custom_model: bool = False,
+        sample_attacks: bool = True,
+    ) -> None:
         """Initializes the InferenceMetric class by setting paths, auxiliary columns, and other configurations.
 
         Args:
@@ -152,8 +152,8 @@ class InferenceMetric(AnonymeterMetric):
         return clean_cols
 
     def evaluate(
-            self: InferenceMetric,
-            synthetic_data_path: Path,
+        self: InferenceMetric,
+        synthetic_data_path: Path,
     ) -> dict[str, str | float]:
         """Evaluates a synthetic dataset against the real dataset using Inference metrics.
 
