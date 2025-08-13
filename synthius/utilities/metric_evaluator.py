@@ -122,8 +122,10 @@ class MetricsAggregator:
         linkability_n_neighbors=50,
         linkability_n_attacks=None,
         linkability_aux_cols=aux_cols,
-        inference_n_attacks=inference_n_attacks,
+        inference_n_attacks=None,
         inference_all_columns=inference_all_columns,
+        inference_use_custom_model=True,
+        inference_sample_attacks=False,
         id_column=ID,
         utility_test_path=test_data,
         utility_models_path=models_path,
@@ -387,7 +389,7 @@ class MetricsAggregator:
 
     def run_inference_metric(self: MetricsAggregator) -> None:
         """Runs the Inference Metric for every secret, adding its results to the aggregated output."""
-        metrics_per_secret = {}
+        metrics_per_secret: dict[str, list] = {}
         control_data = pd.read_csv(self.control_data)
         control_data.columns = clean_columns(control_data).columns
 
@@ -501,7 +503,7 @@ class MetricsAggregator:
         ]
 
         for metric_fn in metrics_to_run:
-            metric_fn()
+            metric_fn()  # type: ignore
 
         temp_results = temp_aggregator.all_results.copy()
         temp_results.columns = ["Original"]  # Rename columns to align with the "Original" dataset
@@ -621,6 +623,10 @@ class MetricsAggregator:
                 "linkability_n_neighbors": self.linkability_n_neighbors,
                 "linkability_n_attacks": self.linkability_n_attacks,
                 "linkability_aux_cols": self.linkability_aux_cols,
+                "inference_n_attacks": self.inference_n_attacks,
+                "inference_all_columns": self.inference_all_columns,
+                "inference_sample_attacks": self.inference_sample_attacks,
+                "inference_use_custom_model": self.inference_use_custom_model,
                 "id_column": self.id_column,
                 "utility_test_path": self.utility_test_path,
                 "utility_models_path": self.utility_models_path,
@@ -674,6 +680,10 @@ class MetricsAggregator:
             linkability_n_neighbors=config["linkability_n_neighbors"],
             linkability_n_attacks=config["linkability_n_attacks"],
             linkability_aux_cols=config["linkability_aux_cols"],
+            inference_all_columns=config["inference_all_columns"],
+            inference_n_attacks=config["inference_n_attacks"],
+            inference_sample_attacks=config["inference_sample_attacks"],
+            inference_use_custom_model=config["inference_use_custom_model"],
             id_column=config["id_column"],
             utility_test_path=config["utility_test_path"],
             utility_models_path=config["utility_models_path"],

@@ -52,7 +52,7 @@ class InferenceMetric(AnonymeterMetric):
         synthetic_data_paths: list[Path],
         aux_cols: list[str],
         secret: str,
-        n_attacks: int,
+        n_attacks: int | None,
         regression: bool | None = None,
         control_data_path: Path | None = None,
         selected_metrics: list[str] | None = None,
@@ -61,7 +61,7 @@ class InferenceMetric(AnonymeterMetric):
         display_result: bool = True,
         use_custom_model: bool = False,
         sample_attacks: bool = True,
-    ) -> None:
+    ) -> None:  # noqa: PLR0913
         """Initializes the InferenceMetric class by setting paths, auxiliary columns, and other configurations.
 
         Args:
@@ -100,7 +100,7 @@ class InferenceMetric(AnonymeterMetric):
 
         self.synthetic_data_paths: list[Path] = synthetic_data_paths
 
-        self.results: list[dict[str, str | float]] = []
+        self.results: list[dict[str, dict | float]] = []
 
         # Drop na values
         self.real_data.columns = self.clean_list(self.real_data.columns)
@@ -132,7 +132,7 @@ class InferenceMetric(AnonymeterMetric):
 
         InferenceMetric.__name__ = "Inference Attack"
 
-        self.grouped_results = {}
+        self.grouped_results: dict[str, dict] = {}
         self.evaluate_all()
 
     @staticmethod
@@ -154,7 +154,7 @@ class InferenceMetric(AnonymeterMetric):
     def evaluate(
         self: InferenceMetric,
         synthetic_data_path: Path,
-    ) -> dict[str, str | float]:
+    ) -> dict[str, dict | float]:
         """Evaluates a synthetic dataset against the real dataset using Inference metrics.
 
         Args:
@@ -212,7 +212,7 @@ class InferenceMetric(AnonymeterMetric):
 
         return filtered_results
 
-    def format_results(self, model_name: str, risk: PrivacyRisk, res: EvaluationResults) -> dict[str, float]:
+    def format_results(self, model_name: str, risk: PrivacyRisk, res: EvaluationResults) -> dict[str, dict | float]:
         """Formats the results in a dictionary.
 
         Extracts information from `risk` and `res` and formats them into a structured dict.

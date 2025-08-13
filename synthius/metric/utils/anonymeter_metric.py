@@ -21,7 +21,7 @@ pd.set_option("future.no_silent_downcasting", True)  # noqa: FBT003
 class AnonymeterMetric(BaseMetric):
     """Base class for anonymeter metric classes."""
 
-    def __init__(self):  # noqa: ANN204
+    def __init__(self) -> None:  # noqa: ANN204
         """A Parent class for all anonymeter metrics.
 
         Implements evaluate_all, display_results and pivot_results.

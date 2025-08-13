@@ -85,7 +85,7 @@ class LinkabilityMetric(AnonymeterMetric):
         self: LinkabilityMetric,
         real_data_path: Path | pd.DataFrame,
         synthetic_data_paths: list[Path],
-        aux_cols: list[list[str], list[str]],
+        aux_cols: tuple[list[str], list[str]],
         n_neighbors: int,
         n_attacks: int | None = None,
         control_data_path: Path | None = None,
@@ -153,7 +153,7 @@ class LinkabilityMetric(AnonymeterMetric):
         self.evaluate_all()
 
     @staticmethod
-    def clean_list(aux_cols: list[list[str], list[str]]) -> tuple[list[str], list[str]]:
+    def clean_list(aux_cols: tuple[list[str], list[str]]) -> tuple[list[str], ...]:
         """Cleans a list of auxiliary column lists by removing unwanted characters.
 
         Args:
