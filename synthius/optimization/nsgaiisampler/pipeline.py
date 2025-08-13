@@ -95,7 +95,7 @@ class NSGAIISamplerHPOptimizer:
         singlingout_n_cols: int | None = None,
         linkability_n_neighbors: int | None = None,
         linkability_n_attacks: int | None = None,
-        linkability_aux_cols: list[list[str]] | None = None,
+        linkability_aux_cols: tuple[list[str], list[str]] | None = None,
         inference_n_attacks: int | None = None,
         inference_sample_attacks: bool = False,  # noqa: FBT001, FBT002
         inference_use_custom_model: bool = False,  # noqa: FBT001, FBT002

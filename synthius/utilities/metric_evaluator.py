@@ -179,7 +179,7 @@ class MetricsAggregator:
         singlingout_n_cols: int | None,
         linkability_n_neighbors: int,
         linkability_n_attacks: int | None,
-        linkability_aux_cols: tuple[list[str], list[str]] | list[list[str]],
+        linkability_aux_cols: tuple[list[str], list[str]],
         inference_n_attacks: int | None,
         inference_all_columns: list[str],
         inference_sample_attacks: bool,  # noqa: FBT001
