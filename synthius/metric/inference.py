@@ -179,7 +179,7 @@ class InferenceMetric(AnonymeterMetric):
 
             for df in [synthetic_data, self.real_data, self.control_data]:
                 if df is not None and self.secret in df and df[self.secret].dtype == bool:
-                        df.loc[:, self.secret] = df[self.secret].astype(int) # Autogluon is failing, cast to int
+                    df.loc[:, self.secret] = df[self.secret].astype(int)  # Autogluon is failing, cast to int
 
             predictor.fit(
                 train_data=synthetic_data,

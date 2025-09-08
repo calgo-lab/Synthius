@@ -234,7 +234,7 @@ class PrivacyAgainstInference(BaseMetric):
             if metric in metric_dispatch:
                 try:
                     results[metric] = metric_dispatch[metric](synthetic_data)
-                except Exception as e: # noqa: BLE001
+                except Exception as e:  # noqa: BLE001
                     logger.warning("Could not compute metric %s for model %s. Skipping.", metric, model_name)
                     logger.warning(e)
                 logger.warning("%s for %s Done.", metric, model_name)

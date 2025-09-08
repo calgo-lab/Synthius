@@ -415,7 +415,7 @@ class MetricsAggregator:
                     sample_attacks=self.inference_sample_attacks,
                 )
                 self.add_metrics(inference_metric, column=secret)
-            except Exception as e: # noqa: BLE001
+            except Exception as e:  # noqa: BLE001
                 logging.warning("Could not run Inference for secret=[%s]", secret)
                 logging.warning(e)
 
