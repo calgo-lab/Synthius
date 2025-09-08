@@ -394,24 +394,30 @@ class MetricsAggregator:
         control_data.columns = clean_columns(control_data).columns
 
         for secret in self.inference_all_columns:
+            if secret == self.id_column:
+                continue
             logging.info("Running inference metric for secret %s", secret)
             metrics_per_secret[secret] = []
             # Categorical or numerical(regression) column?
             regression = control_data[secret].dtype.kind in "iuf"
-            inference_metric = InferenceMetric(
-                real_data_path=self.real_data_path,
-                synthetic_data_paths=self.synthetic_data_paths,
-                control_data_path=self.control_data,
-                secret=secret,
-                aux_cols=[col for col in self.inference_all_columns if col != secret],
-                n_attacks=self.inference_n_attacks,
-                want_parallel=self.want_parallel,
-                display_result=False,
-                use_custom_model=self.inference_use_custom_model,
-                regression=regression,
-                sample_attacks=self.inference_sample_attacks,
-            )
-            self.add_metrics(inference_metric, column=secret)
+            try:
+                inference_metric = InferenceMetric(
+                    real_data_path=self.real_data_path,
+                    synthetic_data_paths=self.synthetic_data_paths,
+                    control_data_path=self.control_data,
+                    secret=secret,
+                    aux_cols=[col for col in self.inference_all_columns if col != secret],
+                    n_attacks=self.inference_n_attacks,
+                    want_parallel=self.want_parallel,
+                    display_result=False,
+                    use_custom_model=self.inference_use_custom_model,
+                    regression=regression,
+                    sample_attacks=self.inference_sample_attacks,
+                )
+                self.add_metrics(inference_metric, column=secret)
+            except Exception as e:
+                logging.error("Could not run Inference for secret=[%s]: %s", secret)
+                logging.error(e)
 
     def run_utility_metric(self: MetricsAggregator) -> None:
         """Runs the utility metric evaluation."""
@@ -589,6 +595,11 @@ class MetricsAggregator:
         grouped = self.all_results.groupby(level="Metric Type")
         for metric in primary_metric_order:
             if metric in grouped.groups:
+                sorted_results = pd.concat([sorted_results, grouped.get_group(metric)])
+
+        # Add the rest of the (anonymeter column-wise) inference metric
+        for metric in grouped.groups:
+            if "Inference Attack" in metric:
                 sorted_results = pd.concat([sorted_results, grouped.get_group(metric)])
 
         self.all_results = sorted_results
