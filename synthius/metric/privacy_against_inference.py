@@ -16,7 +16,7 @@ from sdmetrics.single_table import (
     CategoricalZeroCAP,
 )
 
-from synthius.metric.utils import BaseMetric, generate_metadata, load_data, preprocess_data, apply_preprocessing
+from synthius.metric.utils import BaseMetric, apply_preprocessing, generate_metadata, load_data, preprocess_data
 
 logger = getLogger()
 
@@ -234,7 +234,7 @@ class PrivacyAgainstInference(BaseMetric):
             if metric in metric_dispatch:
                 try:
                     results[metric] = metric_dispatch[metric](synthetic_data)
-                except Exception as e:
+                except Exception as e: # noqa: BLE001
                     logger.warning("Could not compute metric %s for model %s. Skipping.", metric, model_name)
                     logger.warning(e)
                 logger.warning("%s for %s Done.", metric, model_name)
