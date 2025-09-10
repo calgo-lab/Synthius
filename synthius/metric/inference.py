@@ -176,6 +176,11 @@ class InferenceMetric(AnonymeterMetric):
             synthetic_data = synthetic_data[~synthetic_data[self.secret].isna()]
             logging.warning("Training with %d samples.", synthetic_data.shape[0])
             predictor = TabularPredictor(label=self.secret)
+
+            for df in [synthetic_data, self.real_data, self.control_data]:
+                if df is not None and self.secret in df and df[self.secret].dtype == bool:
+                    df.loc[:, self.secret] = df[self.secret].astype(int)  # Autogluon is failing, cast to int
+
             predictor.fit(
                 train_data=synthetic_data,
                 hyperparameters={

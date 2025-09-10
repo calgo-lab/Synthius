@@ -16,7 +16,7 @@ from sdmetrics.single_table import (
     CategoricalZeroCAP,
 )
 
-from synthius.metric.utils import BaseMetric, generate_metadata, load_data, preprocess_data
+from synthius.metric.utils import BaseMetric, apply_preprocessing, generate_metadata, load_data, preprocess_data
 
 logger = getLogger()
 
@@ -216,7 +216,7 @@ class PrivacyAgainstInference(BaseMetric):
         Returns:
             pd.DataFrame: Evaluation results for the model.
         """
-        synthetic_data = load_data(synthetic_data_path).copy()
+        synthetic_data = apply_preprocessing(synthetic_data_path, self.fill_values).copy()
         model_name = synthetic_data_path.stem
 
         results: dict[str, str | float] = {"Model Name": model_name}
@@ -232,7 +232,11 @@ class PrivacyAgainstInference(BaseMetric):
 
         for metric in self.selected_metrics or metric_dispatch.keys():
             if metric in metric_dispatch:
-                results[metric] = metric_dispatch[metric](synthetic_data)
+                try:
+                    results[metric] = metric_dispatch[metric](synthetic_data)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning("Could not compute metric %s for model %s. Skipping.", metric, model_name)
+                    logger.warning(e)
                 logger.warning("%s for %s Done.", metric, model_name)
             else:
                 logger.warning("Metric %s is not supported and will be skipped.", metric)
