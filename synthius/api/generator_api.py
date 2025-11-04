@@ -126,14 +126,14 @@ def run_model(
             )
             gaussian_copula_synthetic_data.to_csv(results_path / "GaussianCopula.csv", index=False)
 
-        elif model == "TAVE":
-            # handle TAVE
+        elif model == "TVAE":
+            # handle TVAE
             tvae_synthesizer = TVAESynthesizer(metadata)
             tvae_synthesizer.fit(train_data)
             tvae_synthetic_data = tvae_synthesizer.sample_from_conditions(
                 conditions=[true_condition, false_condition]
             )
-            tvae_synthetic_data.to_csv(results_results_pathdir / "TVAE.csv", index=False)
+            tvae_synthetic_data.to_csv(results_path / "TVAE.csv", index=False)
 
         elif model == "GaussianMultivariate":
             # handle GaussianMultivariate
@@ -212,8 +212,7 @@ def generate(
         models (List[str] | None): List of model names to execute. If ``None``,
             all built-in models will be run, including:
             ``["CopulaGAN", "CTGAN", "GaussianCopula", "TAVE", "GaussianMultivariate", "ARF", "WGAN"]``.
-        random_seed (int | None): Random seed for reproducibility of train-test splits
-            and model training.
+        random_seed (int | None): Random seed for reproducibility of train-test splits.
 
     Raises:
         FileNotFoundError: If the specified data file cannot be found.
@@ -257,7 +256,7 @@ def generate(
             "CopulaGAN",
             "CTGAN",
             "GaussianCopula",
-            "TAVE",
+            "TVAE",
             "GaussianMultivariate",
             "ARF",
             "WGAN",
@@ -282,6 +281,6 @@ if __name__ == "__main__":
         data_dir="/storage/Synthius/examples/data/",
         results_dir="/storage/Synthius/examples/results/",
         target_column="target_binary",
-        models=["CopulaGAN", "CTGAN", "GaussianCopula", "TAVE", "GaussianMultivariate", "ARF"], # Omit WGAN due to deep bugs
+        models=["CopulaGAN", "CTGAN", "GaussianCopula", "TVAE", "GaussianMultivariate", "ARF"], # Omit WGAN due to deep bugs
         random_seed=42
     )
