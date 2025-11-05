@@ -9,8 +9,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 
-from synthius.model import ModelFitter, ModelLoader
+import warnings
+import pandas as pd
 
+from synthius.metric.utils import utils
+from synthius.utilities import MetricsAggregator
+from synthius.model import ModelFitter, ModelLoader
 
 def fit_models(
     metrics_dir: str | Path,
@@ -94,11 +98,20 @@ def fit_models(
     metrics_df.to_csv(metrics_dir / "metrics.csv")
 
 
+def run_evaluation():
+    pass
+    # Get paths
+    
+    # Get "key fields"
+    
+
+
+
 if __name__ == "__main__":
     fit_models(
         metrics_dir="/storage/Synthius/examples/metrics",
         data_dir="/storage/Synthius/examples/data",
-        synth_dir="/storage/Synthius/examples/results",
+        synth_dir="/storage/Synthius/examples/synthetic_data",
         models_dir="/storage/Synthius/examples/models",
         target_column="target_binary",
         positive_label=1,

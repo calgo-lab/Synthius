@@ -279,7 +279,7 @@ if __name__ == "__main__":
     generate(
         original_data_filename="iris_setosa_vs_all.csv",
         data_dir="/storage/Synthius/examples/data/",
-        results_dir="/storage/Synthius/examples/results/",
+        results_dir="/storage/Synthius/examples/synthetic_data/",
         target_column="target_binary",
         models=["CopulaGAN", "CTGAN", "GaussianCopula", "TVAE", "GaussianMultivariate", "ARF"], # Omit WGAN due to deep bugs
         random_seed=42
