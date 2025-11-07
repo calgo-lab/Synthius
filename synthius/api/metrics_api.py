@@ -11,7 +11,6 @@ from synthius.utilities import MetricsAggregator
 
 
 def get_metrics(
-    metrics_dir: str | Path,
     data_dir: str | Path,
     synth_dir: str | Path,
     models_dir: str | Path,
@@ -34,7 +33,6 @@ def get_metrics(
     metrics to a CSV file for later inspection.
 
     Args:
-        metrics_dir (str | Path): Directory where computed metrics will be stored.
         data_dir (str | Path): Directory containing real train/test datasets.
         synth_dir (str | Path): Directory containing synthetic data files.
         models_dir (str | Path): Directory containing trained model files.
@@ -55,11 +53,10 @@ def get_metrics(
     data_dir = Path(data_dir)
     synth_dir = Path(synth_dir)
     models_dir = Path(models_dir)
-    metrics_dir = Path(metrics_dir)
     results_dir = Path(results_dir)
 
     models_dir.mkdir(parents=True, exist_ok=True)
-    metrics_dir.mkdir(parents=True, exist_ok=True)
+    results_dir.mkdir(parents=True, exist_ok=True)
 
     train_data = data_dir / "train.csv"
     test_data = data_dir / "test.csv"
@@ -132,7 +129,6 @@ if __name__ == "__main__":
     ]
 
     get_metrics(
-        metrics_dir="/storage/Synthius/examples/metrics",
         data_dir="/storage/Synthius/examples/data",
         synth_dir="/storage/Synthius/examples/synthetic_data",
         models_dir="/storage/Synthius/examples/models",

@@ -187,7 +187,7 @@ def generate(
     original_data_filename: str,
     target_column: str | int,
     data_dir: str = ".",
-    results_dir: str = ".",
+    synth_dir: str = ".",
     id_column: str | int | None = None,
     models: List[str] | None = None,
     random_seed: int | None = None,
@@ -203,7 +203,7 @@ def generate(
         original_data_filename (str): Name of the source data file to read.
         data_dir (str): Directory containing the input data file.
             Defaults to the current working directory.
-        results_dir (str): Directory where generated synthetic datasets
+        synth_dir (str): Directory where generated synthetic datasets
             will be stored. Created if it does not exist.
         target_column (str | int): Column name or index representing the target variable
             used for conditional sampling and stratified splitting.
@@ -270,7 +270,7 @@ def generate(
             true_condition,
             false_condition,
             metadata,
-            results_dir,
+            synth_dir,
             id_column,
         )
 
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     generate(
         original_data_filename="iris_setosa_vs_all.csv",
         data_dir="/storage/Synthius/examples/data/",
-        results_dir="/storage/Synthius/examples/synthetic_data/",
+        synth_dir="/storage/Synthius/examples/synthetic_data/",
         target_column="target_binary",
         models=["CopulaGAN", "CTGAN", "GaussianCopula", "TVAE", "GaussianMultivariate", "ARF"], # Omit WGAN due to deep bugs
         random_seed=42
