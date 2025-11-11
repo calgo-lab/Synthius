@@ -87,3 +87,5 @@ if __name__ == "__main__":
             "ARF",  # omit WGAN due to known issues
         ],
     )
+
+    # evaluieren an https://is.mpg.de/sf/code/whynot

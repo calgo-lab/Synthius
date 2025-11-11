@@ -21,8 +21,7 @@ def get_metrics(
     aux_cols: List[List[str]],
     positive_label: int | str | bool = True,
     id_column: str | int | None = None,
-    metric_aggregator_mode: str | None = None,
-    models: List[str] | None = None
+    metric_aggregator_mode: str | None = None
     ) -> None:
     """
     Module for running all Synthius evaluation metrics in batch mode.
@@ -61,18 +60,8 @@ def get_metrics(
     train_data = data_dir / "train.csv"
     test_data = data_dir / "test.csv"
 
-    if models is None:
-        models = [
-            "CopulaGAN",
-            "CTGAN",
-            "GaussianCopula",
-            "TVAE",
-            "GaussianMultivariate",
-            "ARF",
-            "WGAN",
-        ]
-
-    synthetic_data_paths = [synth_dir / f"{m}.csv" for m in models]
+    # Just glob the dir path -- Decou
+    synthetic_data_paths = list(synth_dir.glob("*.csv"))
 
     # Build metrics aggregator
     metrics_result = MetricsAggregator(
@@ -91,7 +80,7 @@ def get_metrics(
         id_column=id_column,
         utility_test_path=test_data,
         utility_models_path=models_dir,
-        #inference_all_columns=inference_all_columns,  # Doesn't work...
+        #inference_all_columns=inference_all_columns,  # Doesn't work... Need the 0.3.0 on PyPi!
         #inference_use_custom_model=True,
         #inference_sample_attacks=False,
         #inference_n_attacks=None,
@@ -102,7 +91,6 @@ def get_metrics(
     )
 
     metric_aggregator_mode = metric_aggregator_mode.lower().replace(" ", "")
-    # Run some really bad code. Whoever wrote this needs remedial schooling...
     if metric_aggregator_mode == "synthetic":
         print("Getting metrics for synthetic models only.")
         metrics_result.run_metrics_for_models()
@@ -119,14 +107,6 @@ def get_metrics(
     metrics_result.all_results.to_csv(results_dir / "results.csv")
 
 if __name__ == "__main__":
-    models = [
-        "CopulaGAN",
-        "CTGAN",
-        "GaussianCopula",
-        "TVAE",
-        "GaussianMultivariate",
-        "ARF",
-    ]
 
     get_metrics(
         data_dir="/storage/Synthius/examples/data",
@@ -138,6 +118,5 @@ if __name__ == "__main__":
         key_fields=[],
         sensitive_fields=[],
         aux_cols=[[]],
-        metric_aggregator_mode="onlyoriginal",
-        models=models
+        metric_aggregator_mode="onlyoriginal"
     )
