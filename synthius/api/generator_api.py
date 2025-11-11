@@ -2,7 +2,7 @@
 # 2025.10.29
 import warnings
 from pathlib import Path
-from typing import List, Tuple, Protocol, Optional
+from typing import List, Tuple, Protocol, Optional, runtime_checkable
 
 import pandas as pd
 from sdv.metadata import SingleTableMetadata
@@ -18,6 +18,7 @@ from synthius.model import GaussianMultivariateSynthesizer, ARF, WGAN
 from synthius.data import DataImputationPreprocessor
 
 
+@runtime_checkable
 class Synthesizer(Protocol):
     """Any synthetic data model should implement this interface."""
     metadata: Optional[SingleTableMetadata]
@@ -30,7 +31,7 @@ class Synthesizer(Protocol):
         ...
 
 
-class SDVSynthWrapper:
+class SDVSynthWrapper(Synthesizer):
     def __init__(self, cls, metadata: Optional[SingleTableMetadata] = None):
         self.model_class = cls
         self.model = None
@@ -50,7 +51,7 @@ class SDVSynthWrapper:
         return self.model.sample_from_conditions(conditions)
 
 
-class ARFSynthWrapper:
+class ARFSynthWrapper(Synthesizer):
     def __init__(self, id_column=None):
         self.id_column = id_column
         self.model = None
@@ -72,7 +73,7 @@ class ARFSynthWrapper:
         return self.model.forge(n=total_samples)
 
 
-class GaussianMultivariateWrapper:
+class GaussianMultivariateWrapper(Synthesizer):
     def __init__(self, results_path: str):
         self.results_path = results_path
         self.model = None
@@ -86,7 +87,7 @@ class GaussianMultivariateWrapper:
         return pd.read_csv(self.model.output_file)
 
 
-class WGANWrapper:
+class WGANWrapper(Synthesizer):
     def __init__(self):
         self.model = None
         self.preprocessor = None

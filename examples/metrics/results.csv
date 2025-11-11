@@ -1,0 +1,29 @@
+Metric Type,Metric,Original
+Basic Quality,Column Pair Trends,0.8644778650027563
+Basic Quality,Column Shapes,0.8833333333333334
+Basic Quality,Data Structure,1.0
+Basic Quality,Data Validity,0.9833333333333334
+Basic Quality,New Row Synthesis,1.0
+Basic Quality,Overall Diagnostic,0.9916666666666667
+Basic Quality,Overall Quality,0.8739055991680449
+Advanced Quality,CS Test,0.9665759224088522
+Advanced Quality,Continuous KL Divergence,0.25851483934881697
+Advanced Quality,Discrete KL Divergence,0.9899957302619552
+Likelihood,BN Likelihood,0.33222222222222225
+Likelihood,BN Log Likelihood,-1.1027410618557467
+Likelihood,GM Log Likelihood,-34.825486238446466
+Propensity Score,Autogluon,0.5
+Propensity Score,HistGradientBoosting,0.5
+Propensity Score,XGBoost,0.4583333333333333
+Distance,5th Percentile | DCR | R&S,0.050078907422721385
+Distance,5th Percentile | DCR | RR,0.05252608321607113
+Distance,5th Percentile | DCR | SS,0.04520948976278305
+Distance,5th Percentile | NNDR | R&S,0.4435555040836334
+Distance,5th Percentile | NNDR | RR,0.4504111990332603
+Distance,5th Percentile | NNDR | SS,0.3974429592490196
+Distance,Mean | DCR | R&S,0.11126811802387238
+Distance,Mean | DCR | RR,0.11995671689510345
+Distance,Removed DataPoint | R&S,0.0
+Distance,Removed DataPoint | RR,0.0
+Distance,Removed DataPoint | SS,0.0
+Distance,Score,0.0600334107875824

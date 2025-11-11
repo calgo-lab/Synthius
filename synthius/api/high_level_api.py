@@ -1,8 +1,8 @@
-# High level api, generates synthetic data and produces metrics.
-
+# High-level API: generates synthetic data and produces metrics.
 
 from generator_api import generate
 from metrics_api import get_metrics
+from generator_api import Synthesizer  # the Protocol interface
 
 def run_synthius(
     original_data_filename: str,
@@ -11,7 +11,7 @@ def run_synthius(
     models_dir: str,
     results_dir: str,
     target_column: str,
-    models: list[str],
+    models: list[Synthesizer],
     random_seed: int = 42,
     positive_label: int = 1,
     key_fields: list[str] | None = None,
@@ -29,7 +29,7 @@ def run_synthius(
         models_dir: Directory containing model outputs or checkpoints.
         results_dir: Directory where final aggregated results are stored.
         target_column: Name of the target column for supervised tasks.
-        models: List of model names to train and evaluate.
+        models: List of instantiated Synthesizer objects.
         random_seed: Random seed for reproducibility.
         positive_label: Label considered as positive in binary classification.
         key_fields: Fields used as unique identifiers (optional).
@@ -42,8 +42,16 @@ def run_synthius(
     sensitive_fields = sensitive_fields or []
     aux_cols = aux_cols or [[]]
 
+    # Validate that all models implement the Synthesizer interface
+    for model in models:
+        if not isinstance(model, Synthesizer):
+            raise TypeError(
+                f"All models must implement the Synthesizer interface. "
+                f"Got {type(model).__name__} instead."
+            )
+
     # Step 1: Generate Synthetic Data
-    print("Generating Synthetic Data")
+    print("[Info] Generating Synthetic Data")
     generate(
         original_data_filename=original_data_filename,
         data_dir=data_dir,
@@ -54,7 +62,7 @@ def run_synthius(
     )
 
     # Step 2: Evaluate Synthetic Data
-    print("Evaluating Synthetic Data")
+    print("[Info] Evaluating Synthetic Data")
     get_metrics(
         data_dir=data_dir,
         synth_dir=synth_dir,
@@ -66,11 +74,38 @@ def run_synthius(
         sensitive_fields=sensitive_fields,
         aux_cols=aux_cols,
         metric_aggregator_mode=metric_aggregator_mode,
-        models=models,
     )
 
 
 if __name__ == "__main__":
+    # We imported the interface (protocol)
+
+    # instantiate wrappers first
+    from generator_api import (
+        SDVSynthWrapper,
+        GaussianMultivariateWrapper,
+        ARFSynthWrapper,
+        WGANWrapper
+    )
+
+    # and sdv mtds
+    from sdv.single_table import (
+        CopulaGANSynthesizer,
+        CTGANSynthesizer,
+        GaussianCopulaSynthesizer,
+        TVAESynthesizer,
+    )
+
+    models = [
+        SDVSynthWrapper(CopulaGANSynthesizer),
+        SDVSynthWrapper(CTGANSynthesizer),
+        SDVSynthWrapper(GaussianCopulaSynthesizer),
+        SDVSynthWrapper(TVAESynthesizer),
+        GaussianMultivariateWrapper(results_path="/storage/Synthius/examples/synthetic_data/"),
+        ARFSynthWrapper(id_column=None),
+        # WGANWrapper()  # optional, known issues
+    ]
+
     run_synthius(
         original_data_filename="iris_setosa_vs_all.csv",
         data_dir="/storage/Synthius/examples/data",
@@ -78,14 +113,6 @@ if __name__ == "__main__":
         models_dir="/storage/Synthius/examples/models",
         results_dir="/storage/Synthius/examples/metrics",
         target_column="target_binary",
-        models=[
-            "CopulaGAN",
-            "CTGAN",
-            "GaussianCopula",
-            "TVAE",
-            "GaussianMultivariate",
-            "ARF",  # omit WGAN due to known issues
-        ],
+        models=models,
+        random_seed=42
     )
-
-    # evaluieren an https://is.mpg.de/sf/code/whynot
