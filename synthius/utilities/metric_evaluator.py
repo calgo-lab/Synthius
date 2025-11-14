@@ -53,6 +53,16 @@ METRIC_CLASSES = {
     "InferenceMetric": InferenceMetric,
 }
 
+UTILITY = "Utility"
+BASIC_QUALITY = "Basic Quality"
+ADVANCED_QUALITY = "Advanced Quality"
+LIKELIHOOD = "Likelihood"
+PAI = "Privacy Against Inference"
+PROPENSITY = "Propensity Score"
+DISTANCE = "Distance"
+SINGLING_OUT = "Singling Out"
+LINKABILITY = "Linkability"
+INFERENCE = "Inference Attack"
 
 def handle_errors(func: Callable[..., R]) -> Callable[..., R | None]:
     """Decorator to handle errors in metric functions. Logs an error message and skips the metric if exceptions occurs.
@@ -105,6 +115,8 @@ class MetricsAggregator:
         need_split (bool): A flag indicating whether the dataset should be split into training and testing sets.
         all_results (DataFrame): Accumulated results from all metrics.
         metadata (dict): Metadata generated from the real dataset.
+        force_evaluation (bool): Whether to force the evaluation from beginning,
+            or to collect the checkpoints from previous runs.
 
     Usage Example:
     ----------------------
@@ -133,6 +145,7 @@ class MetricsAggregator:
         pos_label=POS_LABEL,
         need_split=False,
         want_parallel=False,
+        force_evaluation=False,
     )
     ```
 
@@ -193,6 +206,7 @@ class MetricsAggregator:
         pos_label: bool | str = True,
         need_split: bool = True,
         load_data_now: bool = True,
+        force_evaluation: bool = False,
     ) -> None:
         """Initializes the MetricsAggregator with dataset paths, fields, and configuration for metrics."""
         self.real_data_path = real_data_path
@@ -217,8 +231,17 @@ class MetricsAggregator:
         self.inference_sample_attacks = inference_sample_attacks
         self.inference_use_custom_model = inference_use_custom_model
 
+        self._checkpoint_path = real_data_path.parent / "checkpoints"
+        self._checkpoint_path.mkdir(exist_ok=True, parents=True)
+
         self.id_column = id_column
         self.all_results = pd.DataFrame()
+
+        self.force_evaluation = force_evaluation
+        self._results_path = self._checkpoint_path / "results.pkl"
+        if self._results_path.exists() and not self.force_evaluation:
+            self.all_results = pd.read_pickle(self._results_path)
+            logging.info("Loaded saved results")
 
         if load_data_now:
             self.metadata = generate_metadata(load_data(self.real_data_path))
@@ -496,22 +519,36 @@ class MetricsAggregator:
         )
 
         # Skip running utility metrics
-        metrics_to_run = [
-            temp_aggregator.run_basic_quality_metrics,
-            temp_aggregator.run_advanced_quality_metrics,
-            temp_aggregator.run_likelihood_metrics,
-            temp_aggregator.run_privacy_against_inference,
-            temp_aggregator.run_propensity_score,
-            temp_aggregator.run_distance_metrics,
-            temp_aggregator.run_singling_out_metric,
-            temp_aggregator.run_linkability_metric,
-            temp_aggregator.run_inference_metric,
-        ]
+        metrics_to_run = {
+            BASIC_QUALITY: temp_aggregator.run_basic_quality_metrics,
+            ADVANCED_QUALITY: temp_aggregator.run_advanced_quality_metrics,
+            LIKELIHOOD: temp_aggregator.run_likelihood_metrics,
+            PAI: temp_aggregator.run_privacy_against_inference,
+            PROPENSITY: temp_aggregator.run_propensity_score,
+            DISTANCE: temp_aggregator.run_distance_metrics,
+            SINGLING_OUT: temp_aggregator.run_singling_out_metric,
+            LINKABILITY: temp_aggregator.run_linkability_metric,
+            INFERENCE: temp_aggregator.run_inference_metric,
+        }
 
-        for metric_fn in metrics_to_run:
-            metric_fn()  # type: ignore[operator]
+        for metric, metric_fn in metrics_to_run.items():
+            if metric == INFERENCE:
+                # Inference attack is a special case and there are multiple rows
+                # e.g Inference Attack | Workclass, Inference Attack | Rac
+                all_inference_metrics = self.all_results.index.get_level_values(0).str.startswith("Inference Attack")
+                if self.all_results[all_inference_metrics]["Original"].isna().all():
+                    metric_fn()
+                else:
+                    logging.info(f"{metric} for Original exists. Skipping...")
+            elif self.all_results["Original"].loc[metric].isna().all():
+                metric_fn()  # type: ignore[operator]
+            else:
+                logging.info(f"{metric} for Original exists. Skipping...")
 
         temp_results = temp_aggregator.all_results.copy()
+        if temp_results.empty:
+            logging.info(f"All metrics for Original are computed. Skipping...")
+            return
         temp_results.columns = ["Original"]  # Rename columns to align with the "Original" dataset
 
         if self.all_results.empty:
@@ -527,6 +564,14 @@ class MetricsAggregator:
         # Clean up temporary files
         original_path.unlink()
         synthetic_path.unlink()
+        self.all_results.to_pickle(self._results_path)
+
+    def _metric_computed(self, metric: str) -> bool:
+        """Checks if the `metric` is already computed for all synthetic datasets."""
+        return (metric in self.all_results.index
+                and not self.force_evaluation
+                and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
+                and not self.all_results.loc[[metric]].isna().all(axis=None))
 
     def run_metrics_for_models(self: MetricsAggregator) -> pd.DataFrame:
         """Runs all metrics and aggregates the results into a single table output.
@@ -534,35 +579,76 @@ class MetricsAggregator:
         Returns:
             DataFrame: A pandas DataFrame containing the aggregated results from all metrics.
         """
-        self.run_utility_metric()
-        logging.info("Utility Done")
+        if self._metric_computed(UTILITY):
+            logging.info("Utility already computed. Skipping...")
+        else:
+            self.run_utility_metric()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Utility Done")
 
-        self.run_basic_quality_metrics()
-        logging.info("Basic Done")
+        if self._metric_computed(BASIC_QUALITY):
+            logging.info("Basic quality already computed. Skipping...")
+        else:
+            self.run_basic_quality_metrics()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Basic Done")
 
-        self.run_advanced_quality_metrics()
-        logging.info("Advance Done")
+        if self._metric_computed(ADVANCED_QUALITY):
+            logging.info("Advanced quality already computed. Skipping...")
+        else:
+            self.run_advanced_quality_metrics()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Advance Done")
 
-        self.run_likelihood_metrics()
-        logging.info("Likelihood Done")
+        if self._metric_computed(LIKELIHOOD):
+            logging.info("Likelihood already computed. Skipping...")
+        else:
+            self.run_likelihood_metrics()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Likelihood Done")
 
-        self.run_privacy_against_inference()
-        logging.info("Legacy (SDMetrics) Privacy Against Inference Done")
+        if self._metric_computed(PAI):
+            logging.info("Legacy (SDMetrics) Privacy Against Inference already computed. Skipping...")
+        else:
+            self.run_privacy_against_inference()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Legacy (SDMetrics) Privacy Against Inference Done")
 
-        self.run_propensity_score()
-        logging.info("Propensity Done")
+        if self._metric_computed(PROPENSITY):
+            logging.info("Propensity already computed. Skipping...")
+        else:
+            self.run_propensity_score()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Propensity Done")
 
-        self.run_distance_metrics()
-        logging.info("Distance Done")
+        if self._metric_computed(DISTANCE):
+            logging.info("Distance already computed. Skipping...")
+        else:
+            self.run_distance_metrics()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Distance Done")
 
-        self.run_singling_out_metric()
-        logging.info("SinglingOut Done")
+        if self._metric_computed(SINGLING_OUT):
+            logging.info("Singling out already computed. Skipping...")
+        else:
+            self.run_singling_out_metric()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("SinglingOut Done")
 
-        self.run_linkability_metric()
-        logging.info("Linkability Done")
+        if self._metric_computed(LINKABILITY):
+            logging.info("Linkability already computed. Skipping...")
+        else:
+            self.run_linkability_metric()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Linkability Done")
 
-        self.run_inference_metric()
-        logging.info("Inference Attack Done")
+        # e.g: Inference Attack | Fnlwgt, Inference Attack | Hoursperweek, Inference Attack | Race
+        if self.all_results.index.get_level_values(0).str.startswith(INFERENCE).any():
+            logging.info("Inference Attack already computed. Skipping...")
+        else:
+            self.run_inference_metric()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("Inference Attack Done")
 
         return self.all_results.apply(lambda x: x.apply(format_value))
 
@@ -579,15 +665,15 @@ class MetricsAggregator:
     def reorder_metrics(self: MetricsAggregator) -> pd.DataFrame:
         """Reorder the DataFrame blocks according to a predefined primary metric order."""
         primary_metric_order = [
-            "Utility",
-            "Basic Quality",
-            "Advanced Quality",
-            "Likelihood",
-            "Privacy Against Inference",
-            "Propensity Score",
-            "Distance",
-            "Singling Out",
-            "Linkability",
+            UTILITY,
+            BASIC_QUALITY,
+            ADVANCED_QUALITY,
+            LIKELIHOOD,
+            PAI,
+            PROPENSITY,
+            DISTANCE,
+            SINGLING_OUT,
+            LINKABILITY
         ]
 
         sorted_results = pd.DataFrame()
@@ -599,7 +685,7 @@ class MetricsAggregator:
 
         # Add the rest of the (anonymeter column-wise) inference metric
         for metric in grouped.groups:
-            if "Inference Attack" in metric:
+            if INFERENCE in metric:
                 sorted_results = pd.concat([sorted_results, grouped.get_group(metric)])
 
         self.all_results = sorted_results
