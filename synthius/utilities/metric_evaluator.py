@@ -64,6 +64,7 @@ SINGLING_OUT = "Singling Out"
 LINKABILITY = "Linkability"
 INFERENCE = "Inference Attack"
 
+
 def handle_errors(func: Callable[..., R]) -> Callable[..., R | None]:
     """Decorator to handle errors in metric functions. Logs an error message and skips the metric if exceptions occurs.
 
@@ -240,7 +241,7 @@ class MetricsAggregator:
         self.force_evaluation = force_evaluation
         self._results_path = self._checkpoint_path / "results.pkl"
         if self._results_path.exists() and not self.force_evaluation:
-            self.all_results = pd.read_pickle(self._results_path) # noqa: S301
+            self.all_results = pd.read_pickle(self._results_path)  # noqa: S301
             logging.info("Loaded saved results")
 
         if load_data_now:
@@ -537,7 +538,7 @@ class MetricsAggregator:
                 # e.g Inference Attack | Workclass, Inference Attack | Rac
                 all_inference_metrics = self.all_results.index.get_level_values(0).str.startswith("Inference Attack")
                 if self.all_results[all_inference_metrics]["Original"].isna().all():
-                    metric_fn() # type: ignore[operator]
+                    metric_fn()  # type: ignore[operator]
                 else:
                     logging.info("%s for Original exists. Skipping...", metric)
             elif self.all_results["Original"].loc[metric].isna().all():
@@ -568,10 +569,12 @@ class MetricsAggregator:
 
     def _metric_computed(self, metric: str) -> bool:
         """Checks if the `metric` is already computed for all synthetic datasets."""
-        return (metric in self.all_results.index
-                and not self.force_evaluation
-                and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
-                and not self.all_results.loc[[metric]].isna().all(axis=None))
+        return (
+            metric in self.all_results.index
+            and not self.force_evaluation
+            and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
+            and not self.all_results.loc[[metric]].isna().all(axis=None)
+        )
 
     def run_metrics_for_models(self: MetricsAggregator) -> pd.DataFrame:  # noqa: C901, PLR0912, PLR0915
         """Runs all metrics and aggregates the results into a single table output.
@@ -664,17 +667,7 @@ class MetricsAggregator:
 
     def reorder_metrics(self: MetricsAggregator) -> pd.DataFrame:
         """Reorder the DataFrame blocks according to a predefined primary metric order."""
-        primary_metric_order = [
-            UTILITY,
-            BASIC_QUALITY,
-            ADVANCED_QUALITY,
-            LIKELIHOOD,
-            PAI,
-            PROPENSITY,
-            DISTANCE,
-            SINGLING_OUT,
-            LINKABILITY
-        ]
+        primary_metric_order = [UTILITY, BASIC_QUALITY, ADVANCED_QUALITY, LIKELIHOOD, PAI, PROPENSITY, DISTANCE, SINGLING_OUT, LINKABILITY]
 
         sorted_results = pd.DataFrame()
 
