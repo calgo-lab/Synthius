@@ -240,7 +240,7 @@ class MetricsAggregator:
         self.force_evaluation = force_evaluation
         self._results_path = self._checkpoint_path / "results.pkl"
         if self._results_path.exists() and not self.force_evaluation:
-            self.all_results = pd.read_pickle(self._results_path)
+            self.all_results = pd.read_pickle(self._results_path) # noqa: S301
             logging.info("Loaded saved results")
 
         if load_data_now:
@@ -537,13 +537,13 @@ class MetricsAggregator:
                 # e.g Inference Attack | Workclass, Inference Attack | Rac
                 all_inference_metrics = self.all_results.index.get_level_values(0).str.startswith("Inference Attack")
                 if self.all_results[all_inference_metrics]["Original"].isna().all():
-                    metric_fn()
+                    metric_fn() # type: ignore[operator]
                 else:
-                    logging.info(f"{metric} for Original exists. Skipping...")
+                    logging.info("%s for Original exists. Skipping...", metric)
             elif self.all_results["Original"].loc[metric].isna().all():
                 metric_fn()  # type: ignore[operator]
             else:
-                logging.info(f"{metric} for Original exists. Skipping...")
+                logging.info("%s for Original exists. Skipping...", metric)
 
         temp_results = temp_aggregator.all_results.copy()
         if temp_results.empty:
@@ -573,7 +573,7 @@ class MetricsAggregator:
                 and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
                 and not self.all_results.loc[[metric]].isna().all(axis=None))
 
-    def run_metrics_for_models(self: MetricsAggregator) -> pd.DataFrame:
+    def run_metrics_for_models(self: MetricsAggregator) -> pd.DataFrame:  # noqa: C901, PLR0912, PLR0915
         """Runs all metrics and aggregates the results into a single table output.
 
         Returns:
