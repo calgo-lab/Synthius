@@ -1,0 +1,17 @@
+Unnamed: 0,Age,Workclass,Fnlwgt,Education,Education-num,Marital-status,Occupation,Relationship,Race,Sex,Capital-gain,Capital-loss,Hours-per-week,Native-country,Income
+262663383,30,sdv-pii-bwxov,31472,sdv-pii-0zfem,15,sdv-pii-dtaqh,sdv-pii-g5q5w,sdv-pii-zvivt,White,Male,0,0,58,United-States,1
+330083336,30,sdv-pii-mz2ps,315689,sdv-pii-xkdsr,6,sdv-pii-ljlmv,sdv-pii-12q9j,sdv-pii-5ffoz,White,Male,0,0,23,United-States,1
+542192517,26,sdv-pii-po5z6,914673,sdv-pii-d3m0a,15,sdv-pii-y8rw2,sdv-pii-fpqwq,sdv-pii-smw7v,White,Male,0,0,23,United-States,1
+253952192,26,sdv-pii-1l65h,19780,sdv-pii-wjm35,12,sdv-pii-spe9w,sdv-pii-cgfz3,sdv-pii-dyoal,White,Male,0,0,22,United-States,1
+981101994,36,sdv-pii-c7oit,17932,sdv-pii-yg09x,14,sdv-pii-857vh,sdv-pii-w0os8,sdv-pii-fq06e,White,Female,0,0,21,United-States,1
+253046889,26,sdv-pii-owkju,627565,sdv-pii-tiesv,15,sdv-pii-ufs6g,sdv-pii-yoa04,sdv-pii-pzqtq,White,Male,0,0,20,United-States,1
+465248528,61,sdv-pii-n1r4z,24488,sdv-pii-3e7zt,7,sdv-pii-87m11,sdv-pii-0bab0,sdv-pii-1k9x2,White,Female,0,0,20,United-States,1
+914244538,39,sdv-pii-m9itd,351402,sdv-pii-og57o,15,sdv-pii-w9qdo,sdv-pii-t4dfg,sdv-pii-7b8rm,White,Female,0,0,37,United-States,1
+18953551,26,sdv-pii-106jh,358266,sdv-pii-4fcdi,15,sdv-pii-7skfy,sdv-pii-n06z3,sdv-pii-8z3j8,White,Female,0,0,38,United-States,1
+404217098,49,sdv-pii-850yw,14830,sdv-pii-moy4e,15,sdv-pii-nf8oo,sdv-pii-7yh9u,sdv-pii-ekmjs,Black,Male,0,0,60,Mexico,1
+99739788,26,sdv-pii-ulqse,49054,sdv-pii-2v3jx,15,sdv-pii-63o8n,sdv-pii-mp63a,sdv-pii-re9gg,White,Male,0,0,18,United-States,1
+415524277,34,sdv-pii-shf9u,61149,sdv-pii-mn4v8,7,sdv-pii-wr2mm,sdv-pii-0a1iv,sdv-pii-43qq6,White,Male,0,0,18,United-States,1
+588139578,50,sdv-pii-1hczn,80282,sdv-pii-88unz,15,sdv-pii-gkla0,sdv-pii-1lfdp,sdv-pii-hatup,White,Female,0,0,41,United-States,0
+855632498,27,sdv-pii-trqd5,30850,sdv-pii-m4fj2,15,sdv-pii-4p0yk,sdv-pii-18zo9,sdv-pii-l0cri,Black,Female,0,0,18,United-States,0
+65578093,46,sdv-pii-884hh,93180,sdv-pii-gibfs,15,sdv-pii-crcfz,sdv-pii-oumje,sdv-pii-m18ys,White,Male,0,0,25,United-States,0
+206376556,26,sdv-pii-yf7n4,240600,sdv-pii-bo1pe,15,sdv-pii-yoi36,sdv-pii-7d50r,sdv-pii-cmt33,White,Male,0,0,20,United-States,0

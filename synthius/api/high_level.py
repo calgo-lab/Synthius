@@ -1,7 +1,7 @@
 # High-level API: generates synthetic data and produces metrics.
 
-from generator import generate
-from metrics import get_metrics
+from .generator import _generate
+from .metrics import _get_metrics
 from synthius.model import Synthesizer
 
 def run_synthius(
@@ -11,7 +11,7 @@ def run_synthius(
     models_dir: str,
     results_dir: str,
     target_column: str,
-    models: list[Synthesizer],
+    models: list[Synthesizer] | None,
     random_seed: int = 42,
     positive_label: int = 1,
     key_fields: list[str] | None = None,
@@ -53,7 +53,7 @@ def run_synthius(
 
     # Step 1: Generate Synthetic Data
     print("[Info] Generating Synthetic Data")
-    generate(
+    _generate(
         original_data_filename=original_data_filename,
         data_dir=data_dir,
         synth_dir=synth_dir,
@@ -64,7 +64,7 @@ def run_synthius(
 
     # Step 2: Evaluate Synthetic Data
     print("[Info] Evaluating Synthetic Data")
-    get_metrics(
+    _get_metrics(
         data_dir=data_dir,
         synth_dir=synth_dir,
         models_dir=models_dir,

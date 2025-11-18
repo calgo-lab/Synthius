@@ -1,0 +1,17 @@
+Unnamed: 0,Age,Workclass,Fnlwgt,Education,Education-num,Marital-status,Occupation,Relationship,Race,Sex,Capital-gain,Capital-loss,Hours-per-week,Native-country,Income
+23,46,Self-emp-not-inc,199596,Some-college,10,Divorced,Exec-managerial,Unmarried,White,Female,0,0,50,United-States,1
+0,37,Private,126569,Masters,14,Married-civ-spouse,Tech-support,Husband,White,Male,0,0,60,United-States,0
+247,46,Self-emp-inc,204928,Some-college,10,Married-civ-spouse,Sales,Husband,White,Male,0,0,40,United-States,1
+170,44,Private,142968,HS-grad,9,Widowed,Other-service,Unmarried,White,Female,0,0,40,United-States,1
+59,33,Local-gov,251521,Bachelors,13,Never-married,Exec-managerial,Not-in-family,White,Female,0,0,50,United-States,1
+60,26,Private,124068,Some-college,10,Never-married,Adm-clerical,Not-in-family,White,Female,0,0,20,United-States,1
+181,27,Private,205440,10th,6,Married-civ-spouse,Machine-op-inspct,Husband,White,Male,0,0,40,United-States,1
+56,37,Private,175759,Bachelors,13,Married-civ-spouse,Tech-support,Husband,White,Male,0,0,40,United-States,0
+17,46,State-gov,248895,Bachelors,13,Married-civ-spouse,Exec-managerial,Husband,White,Male,0,0,40,United-States,0
+89,27,Self-emp-not-inc,328119,9th,5,Married-civ-spouse,Craft-repair,Husband,White,Male,0,0,30,Mexico,1
+28,43,Private,598606,9th,5,Separated,Handlers-cleaners,Unmarried,Black,Female,0,0,50,United-States,1
+142,52,Private,72743,HS-grad,9,Married-spouse-absent,Adm-clerical,Not-in-family,White,Female,0,0,50,United-States,1
+95,30,Private,113364,Bachelors,13,Never-married,Sales,Own-child,White,Male,0,0,18,United-States,1
+42,61,Private,147393,Prof-school,15,Married-civ-spouse,Exec-managerial,Husband,White,Male,0,0,20,United-States,1
+132,37,Private,412296,HS-grad,9,Married-civ-spouse,Craft-repair,Husband,White,Male,0,0,35,Mexico,0
+12,30,Private,149507,HS-grad,9,Married-civ-spouse,Sales,Husband,White,Male,0,0,42,United-States,1

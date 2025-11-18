@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from synthius.model import Synthesizer, SDVSynthesizer, SynthesizerGaussianMultivariate, ARFSynthesizer, WGANSynthesizer
 
 
-def preprocess_data(
+def _preprocess_data(
     original_data_filename: str,
     data_dir: str,
     target_column: str | int,
@@ -24,6 +24,7 @@ def preprocess_data(
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Read, split, preprocess, and save the data."""
     data_path = Path(data_dir)
+    data_path.mkdir(parents=True, exist_ok=True)
     file_path = data_path / original_data_filename
 
     if not file_path.exists():
@@ -41,10 +42,17 @@ def preprocess_data(
         stratify=data[target_column],
     )
 
+    # Save the train and test
+    train_file = data_path / "train.csv"
+    test_file = data_path / "test.csv"
+
+    train_data.to_csv(train_file, index=False)
+    test_data.to_csv(test_file, index=False)
+
     return data, train_data, test_data
 
 
-def run_model(
+def _run_model(
     model: Synthesizer,
     train_data: pd.DataFrame,
     total_samples: int,
@@ -63,7 +71,7 @@ def run_model(
         print(f"[Error] {type(model).__name__}: {e}")
 
 
-def generate(
+def _generate(
     original_data_filename: str,
     target_column: str | int,
     data_dir: str = ".",
@@ -73,9 +81,11 @@ def generate(
     random_seed: int | None = None,
 ) -> None:
     """Generate synthetic datasets from a source dataset using Synthesizer instances."""
-    data, train_data, test_data = preprocess_data(
+    data, train_data, test_data = _preprocess_data(
         original_data_filename, data_dir, target_column, random_seed
     )
+
+
 
     # Build conditional sampling info
     total_samples = train_data.shape[0]
@@ -113,7 +123,7 @@ def generate(
 
     # Run each model
     for model_instance in models:
-        run_model(model_instance, train_data, total_samples, synth_dir, conditions=conditions)
+        _run_model(model_instance, train_data, total_samples, synth_dir, conditions=conditions)
 
 
 # For testing purposes
@@ -127,7 +137,7 @@ if __name__ == "__main__":
         ARFSynthesizer(id_column=None),
         # WGANSynthesizer()  # It's broken rn though
     ]
-    generate(
+    _generate(
         original_data_filename="data.csv",
         data_dir="/storage/Synthius/examples/data/",
         synth_dir="/storage/Synthius/examples/synthetic_data/",

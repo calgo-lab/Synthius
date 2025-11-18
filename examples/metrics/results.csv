@@ -1,29 +1,155 @@
 Metric Type,Metric,Original
-Basic Quality,Column Pair Trends,0.8644778650027563
-Basic Quality,Column Shapes,0.8833333333333334
-Basic Quality,Data Structure,1.0
-Basic Quality,Data Validity,0.9833333333333334
-Basic Quality,New Row Synthesis,1.0
-Basic Quality,Overall Diagnostic,0.9916666666666667
-Basic Quality,Overall Quality,0.8739055991680449
-Advanced Quality,CS Test,0.9665759224088522
-Advanced Quality,Continuous KL Divergence,0.25851483934881697
-Advanced Quality,Discrete KL Divergence,0.9899957302619552
-Likelihood,BN Likelihood,0.33222222222222225
-Likelihood,BN Log Likelihood,-1.1027410618557467
-Likelihood,GM Log Likelihood,-34.825486238446466
-Propensity Score,Autogluon,0.5
+Advanced Quality,CS Test,0.7410913972222547
+Advanced Quality,Continuous KL Divergence,0.17500906398898589
+Advanced Quality,Discrete KL Divergence,0.6532887991159918
+Likelihood,BN Likelihood,0.328125
+Likelihood,BN Log Likelihood,-5.301281932375201
+Privacy Against Inference,CategoricalCAP,0.0
+Privacy Against Inference,CategoricalGeneralizedCAP,0.29166666666666674
+Privacy Against Inference,CategoricalKNN,0.875
+Privacy Against Inference,CategoricalNB,0.875
+Privacy Against Inference,CategoricalRF,0.875
+Privacy Against Inference,CategoricalZeroCAP,1.0
+Propensity Score,Autogluon,0.25
 Propensity Score,HistGradientBoosting,0.5
-Propensity Score,XGBoost,0.4583333333333333
-Distance,5th Percentile | DCR | R&S,0.050078907422721385
-Distance,5th Percentile | DCR | RR,0.05252608321607113
-Distance,5th Percentile | DCR | SS,0.04520948976278305
-Distance,5th Percentile | NNDR | R&S,0.4435555040836334
-Distance,5th Percentile | NNDR | RR,0.4504111990332603
-Distance,5th Percentile | NNDR | SS,0.3974429592490196
-Distance,Mean | DCR | R&S,0.11126811802387238
-Distance,Mean | DCR | RR,0.11995671689510345
+Propensity Score,XGBoost,0.5
+Distance,5th Percentile | DCR | R&S,1.256085181236267
+Distance,5th Percentile | DCR | RR,1.2845714092254639
+Distance,5th Percentile | DCR | SS,2.028545618057251
+Distance,5th Percentile | NNDR | R&S,0.6751150995492935
+Distance,5th Percentile | NNDR | RR,0.8088743895292282
+Distance,5th Percentile | NNDR | SS,0.7075106590986252
+Distance,Mean | DCR | R&S,1.836935043334961
+Distance,Mean | DCR | RR,1.4479589462280273
 Distance,Removed DataPoint | R&S,0.0
 Distance,Removed DataPoint | RR,0.0
 Distance,Removed DataPoint | SS,0.0
-Distance,Score,0.0600334107875824
+Distance,Score,0.7971692681312561
+Singling Out,Privacy Risk,0.006334
+Singling Out,CI(95%),"(0.0, 0.012715)"
+Singling Out,Main Attack Success Rate,0.019282
+Singling Out,Main Attack Marginal Error ±,0.004879
+Singling Out,Baseline Attack Success Rate,0.013623
+Singling Out,Baseline Attack Error ±,0.004098
+Singling Out,Control Attack Success Rate,0.013031
+Singling Out,Control Attack Error ±,0.004007
+Inference Attack | Unnamed: 0,Privacy Risk,0.0
+Inference Attack | Unnamed: 0,CI(95%),"(0.0, 0.309604)"
+Inference Attack | Unnamed: 0,Main Attack Success Rate,0.162204
+Inference Attack | Unnamed: 0,Main Attack Marginal Error ±,0.162204
+Inference Attack | Unnamed: 0,Baseline Attack Success Rate,0.162204
+Inference Attack | Unnamed: 0,Baseline Attack Error ±,0.162204
+Inference Attack | Unnamed: 0,Control Attack Success Rate,0.244945
+Inference Attack | Unnamed: 0,Control Attack Error ±,0.244945
+Inference Attack | Age,Privacy Risk,0.068648
+Inference Attack | Age,CI(95%),"(0.0, 0.726392)"
+Inference Attack | Age,Main Attack Success Rate,0.415551
+Inference Attack | Age,Main Attack Marginal Error ±,0.278707
+Inference Attack | Age,Baseline Attack Success Rate,0.246653
+Inference Attack | Age,Baseline Attack Error ±,0.224235
+Inference Attack | Age,Control Attack Success Rate,0.372473
+Inference Attack | Age,Control Attack Error ±,0.326885
+Inference Attack | Workclass,Privacy Risk,0.561486
+Inference Attack | Workclass,CI(95%),"(0.189374, 0.933598)"
+Inference Attack | Workclass,Main Attack Success Rate,0.668898
+Inference Attack | Workclass,Main Attack Marginal Error ±,0.259623
+Inference Attack | Workclass,Baseline Attack Success Rate,0.584449
+Inference Attack | Workclass,Baseline Attack Error ±,0.278707
+Inference Attack | Workclass,Control Attack Success Rate,0.244945
+Inference Attack | Workclass,Control Attack Error ±,0.244945
+Inference Attack | Fnlwgt,Privacy Risk,0.0
+Inference Attack | Fnlwgt,CI(95%),"(0.0, 0.406861)"
+Inference Attack | Fnlwgt,Main Attack Success Rate,0.162204
+Inference Attack | Fnlwgt,Main Attack Marginal Error ±,0.162204
+Inference Attack | Fnlwgt,Baseline Attack Success Rate,0.162204
+Inference Attack | Fnlwgt,Baseline Attack Error ±,0.162204
+Inference Attack | Fnlwgt,Control Attack Success Rate,0.372473
+Inference Attack | Fnlwgt,Control Attack Error ±,0.326885
+Inference Attack | Education,Privacy Risk,0.0
+Inference Attack | Education,CI(95%),"(0.0, 0.519744)"
+Inference Attack | Education,Main Attack Success Rate,0.246653
+Inference Attack | Education,Main Attack Marginal Error ±,0.224235
+Inference Attack | Education,Baseline Attack Success Rate,0.415551
+Inference Attack | Education,Baseline Attack Error ±,0.278707
+Inference Attack | Education,Control Attack Success Rate,0.372473
+Inference Attack | Education,Control Attack Error ±,0.326885
+Inference Attack | Educationnum,Privacy Risk,0.0
+Inference Attack | Educationnum,CI(95%),"(0.0, 0.519744)"
+Inference Attack | Educationnum,Main Attack Success Rate,0.246653
+Inference Attack | Educationnum,Main Attack Marginal Error ±,0.224235
+Inference Attack | Educationnum,Baseline Attack Success Rate,0.331102
+Inference Attack | Educationnum,Baseline Attack Error ±,0.259623
+Inference Attack | Educationnum,Control Attack Success Rate,0.372473
+Inference Attack | Educationnum,Control Attack Error ±,0.326885
+Inference Attack | Maritalstatus,Privacy Risk,0.0
+Inference Attack | Maritalstatus,CI(95%),"(0.0, 1.0)"
+Inference Attack | Maritalstatus,Main Attack Success Rate,0.5
+Inference Attack | Maritalstatus,Main Attack Marginal Error ±,0.284784
+Inference Attack | Maritalstatus,Baseline Attack Success Rate,0.331102
+Inference Attack | Maritalstatus,Baseline Attack Error ±,0.259623
+Inference Attack | Maritalstatus,Control Attack Success Rate,0.627527
+Inference Attack | Maritalstatus,Control Attack Error ±,0.326885
+Inference Attack | Occupation,Privacy Risk,0.0
+Inference Attack | Occupation,CI(95%),"(0.0, 0.519744)"
+Inference Attack | Occupation,Main Attack Success Rate,0.246653
+Inference Attack | Occupation,Main Attack Marginal Error ±,0.224235
+Inference Attack | Occupation,Baseline Attack Success Rate,0.246653
+Inference Attack | Occupation,Baseline Attack Error ±,0.224235
+Inference Attack | Occupation,Control Attack Success Rate,0.372473
+Inference Attack | Occupation,Control Attack Error ±,0.326885
+Inference Attack | Relationship,Privacy Risk,0.0
+Inference Attack | Relationship,CI(95%),"(0.0, 0.821081)"
+Inference Attack | Relationship,Main Attack Success Rate,0.415551
+Inference Attack | Relationship,Main Attack Marginal Error ±,0.278707
+Inference Attack | Relationship,Baseline Attack Success Rate,0.5
+Inference Attack | Relationship,Baseline Attack Error ±,0.284784
+Inference Attack | Relationship,Control Attack Success Rate,0.5
+Inference Attack | Relationship,Control Attack Error ±,0.349961
+Inference Attack | Sex,Privacy Risk,0.0
+Inference Attack | Sex,CI(95%),"(0.0, 1.0)"
+Inference Attack | Sex,Main Attack Success Rate,0.584449
+Inference Attack | Sex,Main Attack Marginal Error ±,0.278707
+Inference Attack | Sex,Baseline Attack Success Rate,0.5
+Inference Attack | Sex,Baseline Attack Error ±,0.284784
+Inference Attack | Sex,Control Attack Success Rate,0.627527
+Inference Attack | Sex,Control Attack Error ±,0.326885
+Inference Attack | Capitalgain,Privacy Risk,0.337796
+Inference Attack | Capitalgain,CI(95%),"(0.0, 1.0)"
+Inference Attack | Capitalgain,Main Attack Success Rate,0.837796
+Inference Attack | Capitalgain,Main Attack Marginal Error ±,0.162204
+Inference Attack | Capitalgain,Baseline Attack Success Rate,0.837796
+Inference Attack | Capitalgain,Baseline Attack Error ±,0.162204
+Inference Attack | Capitalgain,Control Attack Success Rate,0.755055
+Inference Attack | Capitalgain,Control Attack Error ±,0.244945
+Inference Attack | Capitalloss,Privacy Risk,0.337796
+Inference Attack | Capitalloss,CI(95%),"(0.0, 1.0)"
+Inference Attack | Capitalloss,Main Attack Success Rate,0.837796
+Inference Attack | Capitalloss,Main Attack Marginal Error ±,0.162204
+Inference Attack | Capitalloss,Baseline Attack Success Rate,0.837796
+Inference Attack | Capitalloss,Baseline Attack Error ±,0.162204
+Inference Attack | Capitalloss,Control Attack Success Rate,0.755055
+Inference Attack | Capitalloss,Control Attack Error ±,0.244945
+Inference Attack | Hoursperweek,Privacy Risk,0.0
+Inference Attack | Hoursperweek,CI(95%),"(0.0, 0.902385)"
+Inference Attack | Hoursperweek,Main Attack Success Rate,0.5
+Inference Attack | Hoursperweek,Main Attack Marginal Error ±,0.284784
+Inference Attack | Hoursperweek,Baseline Attack Success Rate,0.162204
+Inference Attack | Hoursperweek,Baseline Attack Error ±,0.162204
+Inference Attack | Hoursperweek,Control Attack Success Rate,0.5
+Inference Attack | Hoursperweek,Control Attack Error ±,0.349961
+Inference Attack | Nativecountry,Privacy Risk,0.337796
+Inference Attack | Nativecountry,CI(95%),"(0.0, 1.0)"
+Inference Attack | Nativecountry,Main Attack Success Rate,0.837796
+Inference Attack | Nativecountry,Main Attack Marginal Error ±,0.162204
+Inference Attack | Nativecountry,Baseline Attack Success Rate,0.668898
+Inference Attack | Nativecountry,Baseline Attack Error ±,0.259623
+Inference Attack | Nativecountry,Control Attack Success Rate,0.755055
+Inference Attack | Nativecountry,Control Attack Error ±,0.244945
+Inference Attack | Income,Privacy Risk,0.337796
+Inference Attack | Income,CI(95%),"(0.0, 1.0)"
+Inference Attack | Income,Main Attack Success Rate,0.753347
+Inference Attack | Income,Main Attack Marginal Error ±,0.224235
+Inference Attack | Income,Baseline Attack Success Rate,0.5
+Inference Attack | Income,Baseline Attack Error ±,0.284784
+Inference Attack | Income,Control Attack Success Rate,0.627527
+Inference Attack | Income,Control Attack Error ±,0.326885

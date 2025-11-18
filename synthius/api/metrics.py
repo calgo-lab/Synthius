@@ -2,10 +2,13 @@
 from pathlib import Path
 from typing import List, Optional
 
+from synthius.metric.utils import utils
+import pandas as pd
+
 from synthius.utilities import MetricsAggregator
 
 
-def get_metrics(
+def _get_metrics(
     data_dir: str | Path,
     synth_dir: str | Path,
     models_dir: str | Path,
@@ -17,7 +20,7 @@ def get_metrics(
     positive_label: int | str | bool = True,
     id_column: str | int | None = None,
     metric_aggregator_mode: str | None = None,
-    inference_all_columns: bool = False,
+    inference_all_columns: List[str] = None,
     inference_use_custom_model: bool = True,
     inference_sample_attacks: bool = False,
     inference_n_attacks: Optional[int] = None,
@@ -42,7 +45,7 @@ def get_metrics(
         positive_label (int | str | bool, optional): Positive label for binary tasks.
         id_column (str | int | None, optional): Unique identifier column, if available.
         metric_aggregator_mode (str | None, optional): Mode of metric aggregation.
-        inference_all_columns (bool, optional): Use all columns for inference metrics.
+        inference_all_columns (List[str], optional): Use all columns for inference metrics.
         inference_use_custom_model (bool, optional): Use custom inference model.
         inference_sample_attacks (bool, optional): Whether to sample inference attacks.
         inference_n_attacks (Optional[int], optional): Number of inference attacks.
@@ -62,6 +65,11 @@ def get_metrics(
     # Just glob the dir path -- Decou
     synthetic_data_paths = list(synth_dir.glob("*.csv"))
 
+    # Also do this...
+    # We make sure we use the clean columns from the data
+
+    inference_all_columns = utils.clean_columns(pd.read_csv(test_data)).columns if inference_all_columns is None else inference_all_columns
+
     # --- Build metrics aggregator ---
     metrics_result = MetricsAggregator(
         real_data_path=train_data,
@@ -79,7 +87,7 @@ def get_metrics(
         id_column=id_column,
         utility_test_path=test_data,
         utility_models_path=models_dir,
-        inference_all_columns=inference_all_columns,           # Requires Synthius 0.3.0+
+        inference_all_columns=inference_all_columns, 
         inference_use_custom_model=inference_use_custom_model, # "
         inference_sample_attacks=inference_sample_attacks,     # "
         inference_n_attacks=inference_n_attacks,               # "
@@ -107,7 +115,7 @@ def get_metrics(
 
 if __name__ == "__main__":
 
-    get_metrics(
+    _get_metrics(
         data_dir="/storage/Synthius/examples/data",
         synth_dir="/storage/Synthius/examples/synthetic_data",
         models_dir="/storage/Synthius/examples/models",
