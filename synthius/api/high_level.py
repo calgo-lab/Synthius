@@ -50,6 +50,7 @@ def run_synthius(
                 f"Got {type(model).__name__} instead."
             )
 
+
     # Step 1: Generate Synthetic Data
     print("[Info] Generating Synthetic Data")
     generate(
