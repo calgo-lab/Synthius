@@ -12,12 +12,12 @@ def _get_metrics(  # noqa: PLR0913
     synth_dir: str | Path,
     models_dir: str | Path,
     results_dir: str | Path,
-    target_column: str | int,
+    target_column: str,
     key_fields: list[str],
     sensitive_fields: list[str],
-    aux_cols: list[list[str]],
-    positive_label: int | str | bool = True,  # noqa: FBT002
-    id_column: str | int | None = None,
+    aux_cols: tuple[list[str], list[str]],
+    positive_label: str | bool = True,  # noqa: FBT002
+    id_column: str | None = None,
     metric_aggregator_mode: str | None = None,
     inference_all_columns: list[str] | None = None,
     inference_use_custom_model: bool = True,  # noqa: FBT001, FBT002
@@ -94,7 +94,11 @@ def _get_metrics(  # noqa: PLR0913
         need_split=False,
     )
 
-    metric_aggregator_mode = metric_aggregator_mode.lower().replace(" ", "")
+    if metric_aggregator_mode is None:
+        metrics_result.run_all_with_original()
+    else:
+        metric_aggregator_mode = metric_aggregator_mode.lower().replace(" ", "")
+
     if metric_aggregator_mode == "synthetic":
         metrics_result.run_metrics_for_models()
 
@@ -106,18 +110,3 @@ def _get_metrics(  # noqa: PLR0913
 
     # Takes a long time VVV
     metrics_result.all_results.to_csv(results_dir / "results.csv")
-
-
-if __name__ == "__main__":
-    _get_metrics(
-        data_dir="/storage/Synthius/examples/data",
-        synth_dir="/storage/Synthius/examples/synthetic_data",
-        models_dir="/storage/Synthius/examples/models",
-        results_dir="/storage/Synthius/examples/metrics",
-        target_column="target_binary",
-        positive_label=1,
-        key_fields=[],
-        sensitive_fields=[],
-        aux_cols=[[]],
-        metric_aggregator_mode="onlyoriginal",
-    )

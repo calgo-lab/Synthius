@@ -77,7 +77,7 @@ def _generate(  # noqa: PLR0913
     target_column: str | int,
     data_dir: str = ".",
     synth_dir: str = ".",
-    id_column: str | int | None = None,
+    id_column: str | None = None,
     models: list[Synthesizer] | None = None,
     random_seed: int | None = None,
 ) -> None:
@@ -121,23 +121,3 @@ def _generate(  # noqa: PLR0913
     # Run each model
     for model_instance in models:
         _run_model(model_instance, train_data, total_samples, synth_dir, conditions=conditions)
-
-
-# For testing purposes
-if __name__ == "__main__":
-    models = [
-        SDVSynthesizer(CopulaGANSynthesizer),
-        SDVSynthesizer(CTGANSynthesizer),
-        SDVSynthesizer(GaussianCopulaSynthesizer),
-        SDVSynthesizer(TVAESynthesizer),
-        SynthesizerGaussianMultivariate(results_path="/storage/Synthius/examples/synthetic_data/"),
-        ARFSynthesizer(id_column=None),
-    ]
-    _generate(
-        original_data_filename="data.csv",
-        data_dir="/storage/Synthius/examples/data/",
-        synth_dir="/storage/Synthius/examples/synthetic_data/",
-        target_column="target_binary",
-        models=models,
-        random_seed=42,
-    )

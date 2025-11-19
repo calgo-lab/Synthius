@@ -13,12 +13,12 @@ def run_synthius(  # noqa: PLR0913
     models_dir: str,
     results_dir: str,
     target_column: str,
+    aux_cols: tuple[list[str], list[str]],
     models: list[Synthesizer] | None,
     random_seed: int = 42,
-    positive_label: int = 1,
+    positive_label: str | bool = True,  # noqa: FBT002
     key_fields: list[str] | None = None,
     sensitive_fields: list[str] | None = None,
-    aux_cols: list[list[str]] | None = None,
     metric_aggregator_mode: str = "onlyoriginal",
 ) -> None:
     """High-level API: Generates synthetic data and computes evaluation metrics.
@@ -41,12 +41,6 @@ def run_synthius(  # noqa: PLR0913
     key_fields = key_fields or []
     sensitive_fields = sensitive_fields or []
     aux_cols = aux_cols or [[]]
-
-    # Validate that all models implement the Synthesizer interface
-    for model in models:
-        if not isinstance(model, Synthesizer):
-            msg = "All models must implement the Synthesizer interface."
-            raise TypeError(msg)
 
     # Step 1: Generate Synthetic Data
     _generate(

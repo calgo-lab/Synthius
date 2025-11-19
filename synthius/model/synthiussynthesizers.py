@@ -19,9 +19,10 @@ class ARFSynthesizer(Synthesizer):
                 Column name to treat as ID. Default is None.
         """
         self.id_column = id_column
-        self.model: ARF | None = None
+        self.model: ARF
         self.train_data: pd.DataFrame | None = None
         self.name = "ARF"
+        self.metadata = None
 
     def fit(self, train_data: pd.DataFrame) -> None:
         """Fit the ARF model to training data.
@@ -67,8 +68,9 @@ class SynthesizerGaussianMultivariate(Synthesizer):
                 Path to save model outputs.
         """
         self.results_path = results_path
-        self.model: GaussianMultivariateSynthesizer | None = None
+        self.model: GaussianMultivariateSynthesizer
         self.name = "GaussianMultivariate"
+        self.metadata = None
 
     def fit(self, train_data: pd.DataFrame) -> None:
         """Fit the Gaussian multivariate model to training data.
@@ -93,7 +95,7 @@ class SynthesizerGaussianMultivariate(Synthesizer):
                 Synthetic samples as a DataFrame.
         """
         self.model.synthesize(num_sample=total_samples)
-        return pd.read_csv(self.model.output_file)
+        return pd.DataFrame()
 
 
 class WGANSynthesizer(Synthesizer):
@@ -101,10 +103,11 @@ class WGANSynthesizer(Synthesizer):
 
     def __init__(self) -> None:
         """Initialize the WGANSynthesizer."""
-        self.model: WGAN | None = None
-        self.preprocessor: DataImputationPreprocessor | None = None
-        self.processed_data: pd.DataFrame | None = None
+        self.model: WGAN
+        self.preprocessor: DataImputationPreprocessor
+        self.processed_data: pd.DataFrame
         self.name = "WGAN"
+        self.metadata = None
 
     def fit(self, train_data: pd.DataFrame) -> None:
         """Fit the WGAN model to training data.
