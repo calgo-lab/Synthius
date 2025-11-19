@@ -12,7 +12,7 @@ Privacy Against Inference,CategoricalRF,0.875
 Privacy Against Inference,CategoricalZeroCAP,1.0
 Propensity Score,Autogluon,0.25
 Propensity Score,HistGradientBoosting,0.5
-Propensity Score,XGBoost,0.5
+Propensity Score,XGBoost,0.75
 Distance,5th Percentile | DCR | R&S,1.256085181236267
 Distance,5th Percentile | DCR | RR,1.2845714092254639
 Distance,5th Percentile | DCR | SS,2.028545618057251
@@ -25,14 +25,14 @@ Distance,Removed DataPoint | R&S,0.0
 Distance,Removed DataPoint | RR,0.0
 Distance,Removed DataPoint | SS,0.0
 Distance,Score,0.7971692681312561
-Singling Out,Privacy Risk,0.006334
-Singling Out,CI(95%),"(0.0, 0.012715)"
-Singling Out,Main Attack Success Rate,0.019282
-Singling Out,Main Attack Marginal Error ±,0.004879
-Singling Out,Baseline Attack Success Rate,0.013623
-Singling Out,Baseline Attack Error ±,0.004098
-Singling Out,Control Attack Success Rate,0.013031
-Singling Out,Control Attack Error ±,0.004007
+Singling Out,Privacy Risk,0.002136
+Singling Out,CI(95%),"(0.0, 0.008061)"
+Singling Out,Main Attack Success Rate,0.014954
+Singling Out,Main Attack Marginal Error ±,0.004296
+Singling Out,Baseline Attack Success Rate,0.013956
+Singling Out,Baseline Attack Error ±,0.004149
+Singling Out,Control Attack Success Rate,0.012846
+Singling Out,Control Attack Error ±,0.003978
 Inference Attack | Unnamed: 0,Privacy Risk,0.0
 Inference Attack | Unnamed: 0,CI(95%),"(0.0, 0.309604)"
 Inference Attack | Unnamed: 0,Main Attack Success Rate,0.162204

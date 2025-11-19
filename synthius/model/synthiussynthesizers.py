@@ -1,10 +1,11 @@
 import pandas as pd
-from Synthius.synthius.data.data_imputer import DataImputationPreprocessor
-from Synthius.synthius.model.arf import ARF
-from Synthius.synthius.model.gaussian_multivariate import GaussianMultivariateSynthesizer
-from Synthius.synthius.model.wgan import WGAN
 
+from synthius.data.data_imputer import DataImputationPreprocessor
+
+from .arf import ARF
+from .gaussian_multivariate import GaussianMultivariateSynthesizer
 from .synthesizer import Synthesizer
+from .wgan import WGAN
 
 
 class ARFSynthesizer(Synthesizer):
