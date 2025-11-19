@@ -1,36 +1,34 @@
 # This notebook runs the metrics on the data
 from pathlib import Path
-from typing import List, Optional
 
-from synthius.metric.utils import utils
 import pandas as pd
 
+from synthius.metric.utils import utils
 from synthius.utilities import MetricsAggregator
 
 
-def _get_metrics(
+def _get_metrics(  # noqa: PLR0913
     data_dir: str | Path,
     synth_dir: str | Path,
     models_dir: str | Path,
     results_dir: str | Path,
     target_column: str | int,
-    key_fields: List[str],
-    sensitive_fields: List[str],
-    aux_cols: List[List[str]],
-    positive_label: int | str | bool = True,
+    key_fields: list[str],
+    sensitive_fields: list[str],
+    aux_cols: list[list[str]],
+    positive_label: int | str | bool = True,  # noqa: FBT002
     id_column: str | int | None = None,
     metric_aggregator_mode: str | None = None,
-    inference_all_columns: List[str] = None,
-    inference_use_custom_model: bool = True,
-    inference_sample_attacks: bool = False,
-    inference_n_attacks: Optional[int] = None,
+    inference_all_columns: list[str] | None = None,
+    inference_use_custom_model: bool = True,  # noqa: FBT001, FBT002
+    inference_sample_attacks: bool = False,  # noqa: FBT001, FBT002
+    inference_n_attacks: int | None = None,
 ) -> None:
-    """
-    Module for running all Synthius evaluation metrics in batch mode.
+    """Module for running all Synthius evaluation metrics in batch mode.
 
-    This script loads real, synthetic, and test datasets, initializes a 
-    MetricsAggregator object, and executes the desired evaluation mode 
-    (e.g., synthetic-only, original-only, or both). It saves the resulting 
+    This script loads real, synthetic, and test datasets, initializes a
+    MetricsAggregator object, and executes the desired evaluation mode
+    (e.g., synthetic-only, original-only, or both). It saves the resulting
     metrics to a CSV file for later inspection.
 
     Args:
@@ -67,7 +65,6 @@ def _get_metrics(
 
     # Also do this...
     # We make sure we use the clean columns from the data
-
     inference_all_columns = utils.clean_columns(pd.read_csv(test_data)).columns if inference_all_columns is None else inference_all_columns
 
     # --- Build metrics aggregator ---
@@ -87,10 +84,10 @@ def _get_metrics(
         id_column=id_column,
         utility_test_path=test_data,
         utility_models_path=models_dir,
-        inference_all_columns=inference_all_columns, 
-        inference_use_custom_model=inference_use_custom_model, # "
-        inference_sample_attacks=inference_sample_attacks,     # "
-        inference_n_attacks=inference_n_attacks,               # "
+        inference_all_columns=inference_all_columns,
+        inference_use_custom_model=inference_use_custom_model,
+        inference_sample_attacks=inference_sample_attacks,
+        inference_n_attacks=inference_n_attacks,
         label_column=target_column,
         pos_label=positive_label,
         want_parallel=False,
@@ -99,22 +96,19 @@ def _get_metrics(
 
     metric_aggregator_mode = metric_aggregator_mode.lower().replace(" ", "")
     if metric_aggregator_mode == "synthetic":
-        print("Getting metrics for synthetic models only.")
         metrics_result.run_metrics_for_models()
 
     elif metric_aggregator_mode == "onlyoriginal":
-        print("Getting metrics for the original dataset only.")
         metrics_result.run_metrics_for_original()
-    
+
     else:
-        print("Running metrics for both synthetic models and the original dataset.")
         metrics_result.run_all_with_original()
 
     # Takes a long time VVV
     metrics_result.all_results.to_csv(results_dir / "results.csv")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     _get_metrics(
         data_dir="/storage/Synthius/examples/data",
         synth_dir="/storage/Synthius/examples/synthetic_data",
@@ -125,5 +119,5 @@ if __name__ == "__main__":
         key_fields=[],
         sensitive_fields=[],
         aux_cols=[[]],
-        metric_aggregator_mode="onlyoriginal"
+        metric_aggregator_mode="onlyoriginal",
     )

@@ -1,20 +1,20 @@
 from .arf import ARF
 from .autogloun import ModelFitter, ModelLoader
 from .gaussian_multivariate import GaussianMultivariateSynthesizer
-from .wgan import WGAN
-from .synthesizer import Synthesizer
 from .sdvsynthesizer import SDVSynthesizer
-from .synthiussynthesizers import SynthesizerGaussianMultivariate, ARFSynthesizer, WGANSynthesizer
+from .synthesizer import Synthesizer
+from .synthiussynthesizers import ARFSynthesizer, SynthesizerGaussianMultivariate, WGANSynthesizer
+from .wgan import WGAN
 
 __all__ = [
     "ARF",
     "WGAN",
+    "ARFSynthesizer",
     "GaussianMultivariateSynthesizer",
     "ModelFitter",
     "ModelLoader",
-    "Synthesizer",
     "SDVSynthesizer",
+    "Synthesizer",
     "SynthesizerGaussianMultivariate",
-    "ARFSynthesizer",
-    "WGANSynthesizer"
+    "WGANSynthesizer",
 ]

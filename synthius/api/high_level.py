@@ -1,10 +1,12 @@
 # High-level API: generates synthetic data and produces metrics.
 
-from .generator import _generate
-from .metrics import _get_metrics
 from synthius.model import Synthesizer
 
-def run_synthius(
+from .generator import _generate
+from .metrics import _get_metrics
+
+
+def run_synthius(  # noqa: PLR0913
     original_data_filename: str,
     data_dir: str,
     synth_dir: str,
@@ -18,9 +20,8 @@ def run_synthius(
     sensitive_fields: list[str] | None = None,
     aux_cols: list[list[str]] | None = None,
     metric_aggregator_mode: str = "onlyoriginal",
-):
-    """
-    High-level API: Generates synthetic data and computes evaluation metrics.
+) -> None:
+    """High-level API: Generates synthetic data and computes evaluation metrics.
 
     Args:
         original_data_filename: CSV filename containing the original dataset.
@@ -37,7 +38,6 @@ def run_synthius(
         aux_cols: Auxiliary columns used in metrics computation (optional).
         metric_aggregator_mode: Mode for aggregating metrics.
     """
-
     key_fields = key_fields or []
     sensitive_fields = sensitive_fields or []
     aux_cols = aux_cols or [[]]
@@ -45,14 +45,10 @@ def run_synthius(
     # Validate that all models implement the Synthesizer interface
     for model in models:
         if not isinstance(model, Synthesizer):
-            raise TypeError(
-                f"All models must implement the Synthesizer interface. "
-                f"Got {type(model).__name__} instead."
-            )
-
+            msg = "All models must implement the Synthesizer interface."
+            raise TypeError(msg)
 
     # Step 1: Generate Synthetic Data
-    print("[Info] Generating Synthetic Data")
     _generate(
         original_data_filename=original_data_filename,
         data_dir=data_dir,
@@ -63,7 +59,6 @@ def run_synthius(
     )
 
     # Step 2: Evaluate Synthetic Data
-    print("[Info] Evaluating Synthetic Data")
     _get_metrics(
         data_dir=data_dir,
         synth_dir=synth_dir,
@@ -75,64 +70,4 @@ def run_synthius(
         sensitive_fields=sensitive_fields,
         aux_cols=aux_cols,
         metric_aggregator_mode=metric_aggregator_mode,
-    )
-
-
-if __name__ == "__main__":
-    # We imported the interface (protocol)
-
-    # instantiate wrappers first
-    from synthius.model import (
-        SDVSynthesizer,
-        SynthesizerGaussianMultivariate,
-        ARFSynthesizer,
-        WGANSynthesizer
-    )
-
-    # and sdv mtds
-    from sdv.single_table import (
-        CopulaGANSynthesizer,
-        CTGANSynthesizer,
-        GaussianCopulaSynthesizer,
-        TVAESynthesizer,
-    )
-
-    models = [
-        SDVSynthesizer(CopulaGANSynthesizer),
-        SDVSynthesizer(CTGANSynthesizer),
-        SDVSynthesizer(GaussianCopulaSynthesizer),
-        SDVSynthesizer(TVAESynthesizer),
-        SynthesizerGaussianMultivariate(results_path="/storage/Synthius/examples/synthetic_data/"),
-        ARFSynthesizer(id_column=None),
-        # WGANSynthesizer()  # optional, known issues
-    ]
-
-    key_fields = [
-        "sepal length (cm)",
-        "sepal width (cm)",
-        "petal length (cm)",
-        "petal width (cm)",
-        "target",
-        "target_binary",
-    ]
-
-    sensitive_fields = ["petal width (cm)"]
-
-    aux_cols = [
-        ["Occupation", "Education", "Education-num", "Hours-per-week", "Capital-loss", "Capital-gain"],
-        ["Race", "Sex", "Fnlwgt", "Age", "Native-country", "Workclass", "Marital-status", "Relationship"],
-    ]
-
-    run_synthius(
-        original_data_filename="data.csv",
-        data_dir="/storage/Synthius/examples/data",
-        synth_dir="/storage/Synthius/examples/synthetic_data",
-        models_dir="/storage/Synthius/examples/models",
-        results_dir="/storage/Synthius/examples/metrics",
-        target_column="Income",
-        key_fields=key_fields,
-        sensitive_fields=sensitive_fields,
-        aux_cols=aux_cols,
-        models=models,
-        random_seed=42
     )

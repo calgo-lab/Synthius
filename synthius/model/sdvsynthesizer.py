@@ -1,25 +1,88 @@
-from typing import List, Optional
-
 import pandas as pd
 from sdv.metadata import SingleTableMetadata
+from sdv.sampling import Condition
+
 from .synthesizer import Synthesizer
 
 
 class SDVSynthesizer(Synthesizer):
-    def __init__(self, cls, metadata: Optional[SingleTableMetadata] = None):
+    """Wrapper for SDV synthetic data models to conform to the Synthesizer protocol.
+
+    This class allows any SDV model class to be used in the Synthius pipeline.
+    It handles optional metadata detection and enforces the standard `fit` and
+    `generate` interface.
+
+    Attributes:
+        model_class : type
+            The SDV model class to instantiate.
+        model : object | None
+            The trained SDV model instance after calling `fit`.
+        metadata : SingleTableMetadata | None
+            Optional metadata describing the table schema. Automatically detected
+            from training data if not provided.
+        name : str
+            Name of the synthesizer, derived from the model class name.
+    """
+
+    def __init__(self, cls: type, metadata: SingleTableMetadata | None = None) -> None:
+        """Initialize the SDVSynthesizer.
+
+        Parameters:
+            cls : type
+                The SDV model class to use.
+            metadata : SingleTableMetadata | None, optional
+                Optional metadata object describing the table schema. If None,
+                metadata will be detected from training data during `fit`.
+        """
         self.model_class = cls
-        self.model = None
+        self.model: object | None = None
         self.metadata = metadata
         self.name = cls.__name__
 
-    def fit(self, train_data: pd.DataFrame):
+    def fit(self, train_data: pd.DataFrame) -> None:
+        """Fit the SDV model to the training data.
+
+        If no metadata is provided, automatically detects it from the
+        training DataFrame.
+
+        Parameters:
+            train_data : pd.DataFrame
+                Tabular dataset used to train the SDV model.
+
+        Returns:
+            None
+        """
         if self.metadata is None:
             self.metadata = SingleTableMetadata()
             self.metadata.detect_from_dataframe(train_data)
-        self.model = self.model_class(self.metadata)
-        self.model.fit(train_data)
 
-    def generate(self, total_samples: int, conditions: list = None) -> pd.DataFrame:
+        self.model = self.model_class(self.metadata)
+        self.model.fit(train_data)  # type: ignore  # noqa: PGH003
+
+    def generate(self, total_samples: int, conditions: list[Condition] | None = None) -> pd.DataFrame:  # noqa: ARG002
+        """Generate synthetic samples from the trained SDV model.
+
+        Parameters:
+            conditions : list | None, optional
+                Optional list of conditional constraints for generation.
+
+        Returns:
+            pd.DataFrame
+                DataFrame containing the synthetic samples.
+
+        Raises:
+            RuntimeError
+                If called before `fit()` has been executed.
+            NotImplementedError
+                If the underlying model does not support `sample_from_conditions`.
+        """
         if self.model is None:
-            raise RuntimeError("Model must be fit() before generate()")
-        return self.model.sample_from_conditions(conditions)
+            msg = "Model must be fit() before generate()"
+            raise RuntimeError(msg)
+
+        # Some SDV models use `sample_from_conditions`; ensure total_samples is respected
+        if hasattr(self.model, "sample_from_conditions"):
+            return self.model.sample_from_conditions(conditions)
+
+        msg = f"{self.model_class.__name__} does not support sample_from_conditions."
+        raise NotImplementedError(msg)
