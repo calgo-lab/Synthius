@@ -35,3 +35,8 @@ Thumbs.db
 
 # Virtual environments...
 .venv
+
+# Ruff cache
+.ruff_cache
+
+TempAGModels

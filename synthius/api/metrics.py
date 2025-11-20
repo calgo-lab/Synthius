@@ -7,7 +7,7 @@ from synthius.metric.utils import utils
 from synthius.utilities import MetricsAggregator
 
 
-def _get_metrics(  # noqa: PLR0913
+def _compute_metrics(  # noqa: PLR0913
     data_dir: str | Path,
     synth_dir: str | Path,
     models_dir: str | Path,
@@ -16,9 +16,9 @@ def _get_metrics(  # noqa: PLR0913
     key_fields: list[str],
     sensitive_fields: list[str],
     aux_cols: tuple[list[str], list[str]],
+    metric_aggregator_mode: str,
     positive_label: str | bool = True,  # noqa: FBT002
     id_column: str | None = None,
-    metric_aggregator_mode: str | None = None,
     inference_all_columns: list[str] | None = None,
     inference_use_custom_model: bool = True,  # noqa: FBT001, FBT002
     inference_sample_attacks: bool = False,  # noqa: FBT001, FBT002
@@ -105,8 +105,12 @@ def _get_metrics(  # noqa: PLR0913
     elif metric_aggregator_mode == "onlyoriginal":
         metrics_result.run_metrics_for_original()
 
-    else:
+    elif metric_aggregator_mode == "runall":
         metrics_result.run_all_with_original()
+
+    else:
+        msg = "Specify a mode for the metric aggregator to run"
+        raise ValueError(msg)
 
     # Takes a long time VVV
     metrics_result.all_results.to_csv(results_dir / "results.csv")

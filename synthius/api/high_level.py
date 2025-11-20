@@ -3,7 +3,7 @@
 from synthius.model import Synthesizer
 
 from .generator import _generate
-from .metrics import _get_metrics
+from .metrics import _compute_metrics
 
 
 def run_synthius(  # noqa: PLR0913
@@ -14,8 +14,8 @@ def run_synthius(  # noqa: PLR0913
     results_dir: str,
     target_column: str,
     aux_cols: tuple[list[str], list[str]],
-    models: list[Synthesizer] | None,
-    random_seed: int = 42,
+    models: list[Synthesizer] | None = None,
+    random_seed: int | None = None,
     positive_label: str | bool = True,  # noqa: FBT002
     key_fields: list[str] | None = None,
     sensitive_fields: list[str] | None = None,
@@ -53,7 +53,7 @@ def run_synthius(  # noqa: PLR0913
     )
 
     # Step 2: Evaluate Synthetic Data
-    _get_metrics(
+    _compute_metrics(
         data_dir=data_dir,
         synth_dir=synth_dir,
         models_dir=models_dir,

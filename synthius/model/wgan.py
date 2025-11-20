@@ -5,12 +5,17 @@ from typing import TYPE_CHECKING
 import tensorflow as tf
 from tensorflow.keras import Model, layers
 
+from synthius.data.data_imputer import DataImputationPreprocessor
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     import numpy as np
-    import pandas as pd
 import logging
+
+import pandas as pd
+
+from .synthesizer import Synthesizer
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -271,3 +276,53 @@ class WGAN(Model):
         gradients = gp_tape.gradient(pred, [interpolated])[0]
         norm = tf.sqrt(tf.reduce_sum(tf.square(gradients), axis=[1]))
         return tf.reduce_mean((norm - 1.0) ** 2)
+
+
+class WGANSynthesizer(Synthesizer):
+    """Tabular data synthesizer using a WGAN (Wasserstein GAN) model."""
+
+    def __init__(self) -> None:
+        """Initialize the WGANSynthesizer."""
+        self.model: WGAN
+        self.preprocessor: DataImputationPreprocessor
+        self.processed_data: pd.DataFrame
+        self.name = "WGAN"
+        self.metadata = None
+
+    def fit(self, train_data: pd.DataFrame) -> None:
+        """Fit the WGAN model to training data.
+
+        Parameters:
+            train_data : pd.DataFrame
+                Tabular dataset to train the WGAN model.
+        """
+        self.preprocessor = DataImputationPreprocessor(train_data)
+        self.processed_data = self.preprocessor.fit_transform()
+        n_features = self.processed_data.shape[1]
+
+        self.model = WGAN(
+            n_features=n_features,
+            base_nodes=128,
+            batch_size=512,
+            critic_iters=5,
+            lambda_gp=10.0,
+            num_epochs=100000,
+        )
+        self.model.train(self.processed_data, log_interval=5000, log_training=True)
+
+    def generate(self, total_samples: int, conditions: list | None = None) -> pd.DataFrame:  # noqa: ARG002
+        """Generate synthetic samples from the fitted WGAN model.
+
+        Parameters:
+            total_samples : int
+                Number of synthetic rows to generate.
+            conditions : list | None, optional
+                Currently ignored; included for compatibility with the Synthesizer protocol.
+
+        Returns:
+            pd.DataFrame
+                Synthetic samples as a DataFrame with preprocessing reversed.
+        """
+        samples = self.model.generate_samples(total_samples)
+        data = pd.DataFrame(samples, columns=self.processed_data.columns)
+        return self.preprocessor.inverse_transform(data)

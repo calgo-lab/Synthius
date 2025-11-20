@@ -8,6 +8,7 @@ from scipy.stats import truncnorm
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble._forest import _generate_unsampled_indices
 from sklearn.impute import SimpleImputer
+from .synthesizer import Synthesizer
 
 logger = getLogger()
 
@@ -736,3 +737,52 @@ class ARF:
 
         # Reverse transformation using the processor and Return newly sampled data
         return self.processor.inverse_transform(data_new)
+
+
+class ARFSynthesizer(Synthesizer):
+    """Tabular data synthesizer using an ARF (Adaptive Random Forest) model."""
+
+    def __init__(self, id_column: str | None = None) -> None:
+        """Initialize the ARFSynthesizer.
+
+        Parameters:
+            id_column : str | None, optional
+                Column name to treat as ID. Default is None.
+        """
+        self.id_column = id_column
+        self.model: ARF
+        self.train_data: pd.DataFrame | None = None
+        self.name = "ARF"
+        self.metadata = None
+
+    def fit(self, train_data: pd.DataFrame) -> None:
+        """Fit the ARF model to training data.
+
+        Parameters:
+            train_data : pd.DataFrame
+                Tabular dataset to train the ARF model.
+        """
+        self.train_data = train_data
+        self.model = ARF(
+            x=train_data,
+            id_column=self.id_column,
+            min_node_size=5,
+            num_trees=50,
+            max_features=0.3,
+        )
+        self.model.forde()
+
+    def generate(self, total_samples: int, conditions: list | None = None) -> pd.DataFrame:  # noqa: ARG002
+        """Generate synthetic samples from the fitted ARF model.
+
+        Parameters:
+            total_samples : int
+                Number of synthetic rows to generate.
+            conditions : list | None, optional
+                Currently ignored; included for compatibility with the Synthesizer protocol.
+
+        Returns:
+            pd.DataFrame
+                Synthetic samples as a DataFrame.
+        """
+        return self.model.forge(n=total_samples)

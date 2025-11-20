@@ -3,17 +3,18 @@
 from pathlib import Path
 
 import pandas as pd
-from sdv.metadata import SingleTableMetadata
 from sdv.sampling import Condition
-from sdv.single_table import (
-    CopulaGANSynthesizer,
-    CTGANSynthesizer,
-    GaussianCopulaSynthesizer,
-    TVAESynthesizer,
-)
 from sklearn.model_selection import train_test_split
 
-from synthius.model import ARFSynthesizer, SDVSynthesizer, Synthesizer, SynthesizerGaussianMultivariate
+from synthius.model import (
+    ARFSynthesizer,
+    SDVCopulaGANSynthesizer,
+    SDVCTGANSynthesizer,
+    SDVGaussianCopulaSynthesizer,
+    SDVTVAESynthesizer,
+    Synthesizer,
+    SynthesizerGaussianMultivariate,
+)
 
 
 def _preprocess_data(
@@ -107,13 +108,11 @@ def _generate(  # noqa: PLR0913
 
     # Instantiate default models if user did not provide
     if models is None:
-        metadata = SingleTableMetadata()
-        metadata.detect_from_dataframe(data)
         models = [
-            SDVSynthesizer(CopulaGANSynthesizer, metadata),
-            SDVSynthesizer(CTGANSynthesizer, metadata),
-            SDVSynthesizer(GaussianCopulaSynthesizer, metadata),
-            SDVSynthesizer(TVAESynthesizer, metadata),
+            SDVCopulaGANSynthesizer(),
+            SDVCTGANSynthesizer(),
+            SDVGaussianCopulaSynthesizer(),
+            SDVTVAESynthesizer(),
             SynthesizerGaussianMultivariate(results_path=synth_dir),
             ARFSynthesizer(id_column=id_column),
         ]

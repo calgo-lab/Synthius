@@ -1,7 +1,6 @@
 from typing import Protocol, runtime_checkable
 
 import pandas as pd
-from sdv.metadata import SingleTableMetadata
 
 
 @runtime_checkable
@@ -13,9 +12,6 @@ class Synthesizer(Protocol):
 
     Attributes:
     ----------
-    metadata : SingleTableMetadata | None
-        Optional metadata describing the table schema, column types, and
-        constraints. Implementations may populate this after training.
     name : str
         Human-readable name identifying the synthesizer. Used for saving
         outputs and experiment tracking.
@@ -28,7 +24,6 @@ class Synthesizer(Protocol):
         Generate synthetic samples from the fitted model.
     """
 
-    metadata: SingleTableMetadata | None
     name: str
 
     def fit(self, train_data: pd.DataFrame) -> None:

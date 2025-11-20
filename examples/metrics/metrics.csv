@@ -1,9 +1,0 @@
-Metric,ARF,CTGAN,CopulaGAN,GaussianCopula,GaussianMultivariate,Original,TVAE
-accuracy,1,0.66667,0.86667,0.86667,1,1,1
-f1,1,0.37500,0.75000,0.77778,1,1,1
-f1_macro,1,0.57386,0.82955,0.84127,1,1,1
-f1_weighted,1,0.64015,0.85606,0.86243,1,1,1
-precision_macro,1,0.60417,0.91667,0.86932,1,1,1
-recall_macro,1,0.57500,0.80000,0.82500,1,1,1
-total_true_support,44,40,40,40,42,40,40
-true_support,10,10,10,10,10,10,10
