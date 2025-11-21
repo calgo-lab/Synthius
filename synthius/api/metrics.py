@@ -60,14 +60,11 @@ def _compute_metrics(  # noqa: PLR0913
     train_data = data_dir / "train.csv"
     test_data = data_dir / "test.csv"
 
-    # Just glob the dir path -- Decou
     synthetic_data_paths = list(synth_dir.glob("*.csv"))
 
-    # Also do this...
     # We make sure we use the clean columns from the data
     inference_all_columns = utils.clean_columns(pd.read_csv(test_data)).columns if inference_all_columns is None else inference_all_columns
 
-    # --- Build metrics aggregator ---
     metrics_result = MetricsAggregator(
         real_data_path=train_data,
         synthetic_data_paths=synthetic_data_paths,
@@ -112,5 +109,5 @@ def _compute_metrics(  # noqa: PLR0913
         msg = "Specify a mode for the metric aggregator to run"
         raise ValueError(msg)
 
-    # Takes a long time VVV
+    # Takes a long time
     metrics_result.all_results.to_csv(results_dir / "results.csv")
