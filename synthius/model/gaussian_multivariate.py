@@ -8,6 +8,8 @@ from copulas.multivariate import GaussianMultivariate
 
 from synthius.data import ContinuousDataTransformer
 
+from .synthesizer import Synthesizer
+
 logger = getLogger()
 
 
@@ -133,3 +135,44 @@ class GaussianMultivariateSynthesizer:
             adjusted_data = pd.concat([adjusted_data, additional_samples], ignore_index=True)
 
         return adjusted_data
+
+
+class SynthesizerGaussianMultivariate(Synthesizer):
+    """Tabular data synthesizer using a Gaussian multivariate model."""
+
+    def __init__(self, results_path: str) -> None:
+        """Initialize the Gaussian multivariate synthesizer.
+
+        Parameters:
+            results_path : str
+                Path to save model outputs.
+        """
+        self.results_path = results_path
+        self.model: GaussianMultivariateSynthesizer
+        self.name = "GaussianMultivariate"
+        self.metadata = None
+
+    def fit(self, train_data: pd.DataFrame) -> None:
+        """Fit the Gaussian multivariate model to training data.
+
+        Parameters:
+            train_data : pd.DataFrame
+                Tabular dataset to train the model.
+        """
+        self.model = GaussianMultivariateSynthesizer(train_data, self.results_path)
+
+    def generate(self, total_samples: int, conditions: list | None = None) -> pd.DataFrame:  # noqa: ARG002
+        """Generate synthetic samples from the fitted model.
+
+        Parameters:
+            total_samples : int
+                Number of synthetic rows to generate.
+            conditions : list | None, optional
+                Currently ignored; included for compatibility with the Synthesizer protocol.
+
+        Returns:
+            pd.DataFrame
+                Synthetic samples as a DataFrame.
+        """
+        self.model.synthesize(num_sample=total_samples)
+        return pd.DataFrame()
