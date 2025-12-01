@@ -9,6 +9,7 @@ from .sdv_synthesizers import (
 )
 from .synthesizer import Synthesizer
 from .wgan import WGAN, WGANSynthesizer
+from .tabdiff import TabDiffSynthesizer
 
 __all__ = [
     "ARF",
@@ -20,9 +21,9 @@ __all__ = [
     "SDVCTGANSynthesizer",
     "SDVCopulaGANSynthesizer",
     "SDVGaussianCopulaSynthesizer",
-    "SDVSynthesizer",
     "SDVTVAESynthesizer",
     "Synthesizer",
     "SynthesizerGaussianMultivariate",
+    "TabDiffSynthesizer",
     "WGANSynthesizer",
 ]
