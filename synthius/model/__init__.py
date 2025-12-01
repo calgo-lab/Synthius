@@ -8,8 +8,8 @@ from .sdv_synthesizers import (
     SDVTVAESynthesizer,
 )
 from .synthesizer import Synthesizer
-from .wgan import WGAN, WGANSynthesizer
 from .tabdiff import TabDiffSynthesizer
+from .wgan import WGAN, WGANSynthesizer
 
 __all__ = [
     "ARF",

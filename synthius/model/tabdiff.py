@@ -1,7 +1,6 @@
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -9,14 +8,12 @@ import tomli
 import torch
 from torch.utils.data import DataLoader
 
+from synthius.data import DataImputationPreprocessor, TorchDataset
+from synthius.model import Synthesizer
 from synthius.TabDiff.src import get_categories
 from synthius.TabDiff.tabdiff.models.unified_ctime_diffusion import UnifiedCtimeDiffusion
-from synthius.TabDiff.tabdiff.modules.main_modules import Model
-from synthius.TabDiff.tabdiff.modules.main_modules import UniModMLP
+from synthius.TabDiff.tabdiff.modules.main_modules import Model, UniModMLP
 from synthius.TabDiff.tabdiff.trainer import Trainer
-from synthius.data import DataImputationPreprocessor
-from synthius.data import TorchDataset
-from synthius.model import Synthesizer
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -26,13 +23,13 @@ CONFIG_PATH = TABDIFF_BASE_PATH / "tabdiff/configs/tabdiff_configs.toml"
 
 
 @dataclass
-class DataConfig:
+class DataConfig:  # noqa: D101
     dequant_dist: str
     int_dequant_factor: int
 
 
 @dataclass
-class UniModMLPParams:
+class UniModMLPParams:  # noqa: D101
     num_layers: int
     d_token: int
     n_head: int
@@ -41,30 +38,30 @@ class UniModMLPParams:
     dim_t: int
     use_mlp: bool
     d_numerical: int
-    categories: List[int]
+    categories: list[int]
 
 
 @dataclass
-class SamplerParams:
+class SamplerParams:  # noqa: D101
     stochastic_sampler: bool
     second_order_correction: bool
 
 
 @dataclass
-class EDMParams:
+class EDMParams:  # noqa: D101
     precond: bool
     sigma_data: float
     net_conditioning: str
 
 
 @dataclass
-class NoiseDistParams:
+class NoiseDistParams:  # noqa: D101
     P_mean: float
     P_std: float
 
 
 @dataclass
-class NoiseScheduleParams:
+class NoiseScheduleParams:  # noqa: D101
     sigma_min: float
     sigma_max: float
     rho: float
@@ -77,7 +74,7 @@ class NoiseScheduleParams:
 
 
 @dataclass
-class DiffusionParams:
+class DiffusionParams:  # noqa: D101
     num_timesteps: int
     scheduler: str
     cat_scheduler: str
@@ -89,7 +86,7 @@ class DiffusionParams:
 
 
 @dataclass
-class TrainMain:
+class TrainMain:  # noqa: D101
     steps: int
     lr: float
     weight_decay: float
@@ -106,27 +103,37 @@ class TrainMain:
 
 
 @dataclass
-class TrainConfig:
+class TrainConfig:  # noqa: D101
     main: TrainMain
 
 
 @dataclass
-class SampleConfig:
+class SampleConfig:  # noqa: D101
     batch_size: int
 
 
 @dataclass
-class TabDiffConfig:
+class TabDiffConfig:   # noqa: D101
     data: DataConfig
     unimodmlp_params: UniModMLPParams
     diffusion_params: DiffusionParams
     train: TrainConfig
     sample: SampleConfig
-    model_save_path: str
-    result_save_path: str
+    model_save_path: str | Path
+    result_save_path: str | Path
 
 
 def load_config(path: Path) -> TabDiffConfig:
+    """Loads the config from `path`.
+
+    Parameters:
+        path: Path
+            The path to the config.
+
+    Returns:
+            TabDiffConfig
+                The config loaded as TabDiffConfig.
+    """
     with path.open("rb") as f:
         toml_data = tomli.load(f)
         # Build the dataclasses from the TOML
@@ -165,7 +172,8 @@ def load_config(path: Path) -> TabDiffConfig:
 
 class TabDiffSynthesizer(Synthesizer):
     """Tabular data synthesizer using a TabDiff::UnifiedCtimeDiffusion model."""
-    def __init__(self, data_name: str, exp_name: str = None, id_column: str = None, gpu: int = -1) -> None:
+    def __init__(self, data_name: str, exp_name: str | None = None,
+                 id_column: str | None = None, gpu: int = -1) -> None:
         """Initialize the TabDiffSynthesizer."""
         self.data_name = data_name
         self.exp_name = exp_name if exp_name is not None else "learnable_schedule"
@@ -240,10 +248,15 @@ class TabDiffSynthesizer(Synthesizer):
         First creates a UniModMLP then the TabDiff diffusion model - UnifiedCtimeDiffusion,
         finally, wraps everything in the Trainer wrapper class from TabDiff.
 
-        :param train_loader: The torch DataLoader for creating TabDiff::UnifiedCtimeDiffusion.
-        :param train_dataset:The dataset TorchDataset for creating TabDiff::UnifiedCtimeDiffusion.
+        Parameters:
+            train_loader: DataLoader
+                The torch DataLoader for creating TabDiff::UnifiedCtimeDiffusion.
+            train_dataset: TorchDataset
+                The dataset TorchDataset for creating TabDiff::UnifiedCtimeDiffusion.
+
         Returns:
-            The generated Trainer
+            Trainer
+                The generated Trainer from TabDiff.
         """
         backbone = UniModMLP(
             **asdict(self.raw_config.unimodmlp_params)
@@ -263,7 +276,7 @@ class TabDiffSynthesizer(Synthesizer):
         diffusion.train()
 
         sample_batch_size = self.raw_config.sample.batch_size
-        trainer = Trainer(
+        return Trainer(
             diffusion=diffusion,
             train_iter=train_loader,
             dataset=train_dataset,
@@ -280,7 +293,6 @@ class TabDiffSynthesizer(Synthesizer):
             y_only=False,
             id_col=self.id_column
         )
-        return trainer
 
     def fit(self, train_data: pd.DataFrame) -> None:
         """Fit the TabDiff::UnifiedCtimeDiffusion model to training data.
@@ -309,4 +321,4 @@ class TabDiffSynthesizer(Synthesizer):
         """
         samples = self.model.sample(total_samples)
         data = pd.DataFrame(samples, columns=self.data_cols)
-        return self.preprocessor.inverse_transform(data, multiply=False)  # tabdiff does this on its own
+        return self.preprocessor.inverse_transform(data, multiply_categories=False)  # tabdiff does this on its own

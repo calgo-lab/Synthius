@@ -138,11 +138,14 @@ class DataImputationPreprocessor:
 
         return processed_data
 
-    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame, multiply: bool = True) -> pd.DataFrame:
+    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame,
+                          multiply_categories: bool = True) -> pd.DataFrame:  # noqa: FBT001, FBT002
         """Reverse the transformation by scaling back and reintroducing missing values.
 
         Args:
             processed_data (pd.DataFrame): The transformed DataFrame to inverse transform.
+            multiply_categories (bool, optional): Whether to multiply the categorical columns by their cardinality.
+                (Note: In TabDiff this is implicitly handled, and we want to avoid it here).
 
         Returns:
             pd.DataFrame: The original DataFrame with imputed values and reintroduced missing values.
@@ -159,7 +162,7 @@ class DataImputationPreprocessor:
                 if col in self.float_cols:
                     original_data[col] = original_data[col].round(self.decimal_places[col])
             elif col not in self.bool_cols:
-                if multiply:
+                if multiply_categories:  # in TabDiff this is implicitly handled
                     original_data[col] = (original_data[col] * (self.label_encoders[col].classes_.size - 1)).round()
                 original_data[col] = self.label_encoders[col].inverse_transform(original_data[col].astype(int))
 
