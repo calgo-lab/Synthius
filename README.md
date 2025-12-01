@@ -35,3 +35,6 @@ Mac users may encounter errors during installation. To resolve these issues, ins
 
 ## Acknowledgments
 Special thanks to all contributors and the libraries used in this project.
+
+This package includes TabDiff (Copyright 2024 Minkai Xu) under the MIT License.
+For more details, see synthius/TabDiff/LICENSE.

@@ -1,0 +1,3 @@
+[submodule "synthius/TabDiff"]
+	path = synthius/TabDiff
+	url = git@github.com:calgo-lab/TabDiff.git
