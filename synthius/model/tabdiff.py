@@ -113,7 +113,7 @@ class SampleConfig:  # noqa: D101
 
 
 @dataclass
-class TabDiffConfig:   # noqa: D101
+class TabDiffConfig:  # noqa: D101
     data: DataConfig
     unimodmlp_params: UniModMLPParams
     diffusion_params: DiffusionParams
@@ -139,11 +139,7 @@ def load_config(path: Path) -> TabDiffConfig:
         # Build the dataclasses from the TOML
         data_cfg = DataConfig(**toml_data["data"])
 
-        unimodmlp_params = UniModMLPParams(
-            **toml_data["unimodmlp_params"],
-            d_numerical=0,
-            categories=[]
-        )
+        unimodmlp_params = UniModMLPParams(**toml_data["unimodmlp_params"], d_numerical=0, categories=[])
 
         diffusion_params = DiffusionParams(
             num_timesteps=toml_data["diffusion_params"]["num_timesteps"],
@@ -153,7 +149,7 @@ def load_config(path: Path) -> TabDiffConfig:
             sampler_params=SamplerParams(**toml_data["diffusion_params"]["sampler_params"]),
             edm_params=EDMParams(**toml_data["diffusion_params"]["edm_params"]),
             noise_dist_params=NoiseDistParams(**toml_data["diffusion_params"]["noise_dist_params"]),
-            noise_schedule_params=NoiseScheduleParams(**toml_data["diffusion_params"]["noise_schedule_params"])
+            noise_schedule_params=NoiseScheduleParams(**toml_data["diffusion_params"]["noise_schedule_params"]),
         )
 
         train_config = TrainConfig(main=TrainMain(**toml_data["train"]["main"]))
@@ -166,14 +162,14 @@ def load_config(path: Path) -> TabDiffConfig:
             train=train_config,
             sample=sample_config,
             model_save_path="",
-            result_save_path=""
+            result_save_path="",
         )
 
 
 class TabDiffSynthesizer(Synthesizer):
     """Tabular data synthesizer using a TabDiff::UnifiedCtimeDiffusion model."""
-    def __init__(self, data_name: str, exp_name: str | None = None,
-                 id_column: str | None = None, gpu: int = -1) -> None:
+
+    def __init__(self, data_name: str, exp_name: str | None = None, id_column: str | None = None, gpu: int = -1) -> None:
         """Initialize the TabDiffSynthesizer."""
         self.data_name = data_name
         self.exp_name = exp_name if exp_name is not None else "learnable_schedule"
@@ -231,9 +227,9 @@ class TabDiffSynthesizer(Synthesizer):
             tuple[TorchDataset, DataLoader]: The dataset and dataloader for training TabDiff::UnifiedCtimeDiffusion.
         """
         preprocessed_data = self.preprocessor.fit_transform()
-        dataset = TorchDataset(preprocessed_data[self.data_cols],
-                               d_numerical=self.raw_config.unimodmlp_params.d_numerical,
-                               categories=self.raw_config.unimodmlp_params.categories)
+        dataset = TorchDataset(
+            preprocessed_data[self.data_cols], d_numerical=self.raw_config.unimodmlp_params.d_numerical, categories=self.raw_config.unimodmlp_params.categories
+        )
         train_loader = DataLoader(
             dataset,
             batch_size=self.raw_config.train.main.batch_size,
@@ -258,9 +254,7 @@ class TabDiffSynthesizer(Synthesizer):
             Trainer
                 The generated Trainer from TabDiff.
         """
-        backbone = UniModMLP(
-            **asdict(self.raw_config.unimodmlp_params)
-        )
+        backbone = UniModMLP(**asdict(self.raw_config.unimodmlp_params))
         model = Model(backbone, **asdict(self.raw_config.diffusion_params.edm_params))
         model.to(self.device)
 
@@ -291,7 +285,7 @@ class TabDiffSynthesizer(Synthesizer):
             device=self.device,
             ckpt_path=None,
             y_only=False,
-            id_col=self.id_column
+            id_col=self.id_column,
         )
 
     def fit(self, train_data: pd.DataFrame) -> None:

@@ -138,8 +138,7 @@ class DataImputationPreprocessor:
 
         return processed_data
 
-    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame,
-                          multiply_categories: bool = True) -> pd.DataFrame:  # noqa: FBT001, FBT002
+    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame, multiply_categories: bool = True) -> pd.DataFrame:  # noqa: FBT001, FBT002
         """Reverse the transformation by scaling back and reintroducing missing values.
 
         Args:

@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 
 class TorchDataset(Dataset):
     """A torch Dataset designed for TabDiff."""
+
     def __init__(self, data: pd.DataFrame, d_numerical: int, categories: list[int]) -> None:
         """Initialize the torch dataset.
 
