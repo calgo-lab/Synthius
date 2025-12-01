@@ -57,6 +57,7 @@ METRIC_CLASSES = {
 
 class Metric(str, Enum):
     """An Enum for the descriptive names of the metrics."""
+
     UTILITY = "Utility"
     BASIC_QUALITY = "Basic Quality"
     ADVANCED_QUALITY = "Advanced Quality"
@@ -185,33 +186,33 @@ class MetricsAggregator:
     """
 
     def __init__(  # noqa: PLR0913
-            self: MetricsAggregator,
-            real_data_path: Path,
-            synthetic_data_paths: list[Path],
-            control_data: Path | None,
-            key_fields: list[str],
-            sensitive_fields: list[str],
-            distance_scaler: str,
-            singlingout_mode: str,
-            singlingout_n_attacks: int,
-            singlingout_n_cols: int | None,
-            linkability_n_neighbors: int,
-            linkability_n_attacks: int | None,
-            linkability_aux_cols: tuple[list[str], list[str]],
-            inference_n_attacks: int | None,
-            inference_all_columns: list[str],
-            inference_sample_attacks: bool,  # noqa: FBT001
-            inference_use_custom_model: bool,  # noqa: FBT001
-            id_column: str | None,
-            utility_test_path: Path,
-            utility_models_path: Path,
-            label_column: str,
-            *,
-            want_parallel: bool | None = None,
-            pos_label: bool | str = True,
-            need_split: bool = True,
-            load_data_now: bool = True,
-            force_evaluation: bool = False,
+        self: MetricsAggregator,
+        real_data_path: Path,
+        synthetic_data_paths: list[Path],
+        control_data: Path | None,
+        key_fields: list[str],
+        sensitive_fields: list[str],
+        distance_scaler: str,
+        singlingout_mode: str,
+        singlingout_n_attacks: int,
+        singlingout_n_cols: int | None,
+        linkability_n_neighbors: int,
+        linkability_n_attacks: int | None,
+        linkability_aux_cols: tuple[list[str], list[str]],
+        inference_n_attacks: int | None,
+        inference_all_columns: list[str],
+        inference_sample_attacks: bool,  # noqa: FBT001
+        inference_use_custom_model: bool,  # noqa: FBT001
+        id_column: str | None,
+        utility_test_path: Path,
+        utility_models_path: Path,
+        label_column: str,
+        *,
+        want_parallel: bool | None = None,
+        pos_label: bool | str = True,
+        need_split: bool = True,
+        load_data_now: bool = True,
+        force_evaluation: bool = False,
     ) -> None:
         """Initializes the MetricsAggregator with dataset paths, fields, and configuration for metrics."""
         self.real_data_path = real_data_path
@@ -473,8 +474,7 @@ class MetricsAggregator:
 
         metric_name = "Utility"
 
-        if not self.all_results.empty and metric_name in self.all_results.index.get_level_values(
-                "Metric Type").unique():
+        if not self.all_results.empty and metric_name in self.all_results.index.get_level_values("Metric Type").unique():
             for index, row in result.iterrows():
                 self.all_results.loc[(metric_name, index), :] = row
         else:
@@ -575,10 +575,10 @@ class MetricsAggregator:
     def _metric_computed(self, metric: str) -> bool:
         """Checks if the `metric` is already computed for all synthetic datasets."""
         return (
-                metric in self.all_results.index
-                and not self.force_evaluation
-                and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
-                and not self.all_results.loc[[metric]].isna().all(axis=None)
+            metric in self.all_results.index
+            and not self.force_evaluation
+            and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
+            and not self.all_results.loc[[metric]].isna().all(axis=None)
         )
 
     def run_metrics_for_models(self: MetricsAggregator) -> pd.DataFrame:  # noqa: C901, PLR0912, PLR0915
@@ -672,8 +672,17 @@ class MetricsAggregator:
 
     def reorder_metrics(self: MetricsAggregator) -> pd.DataFrame:
         """Reorder the DataFrame blocks according to a predefined primary metric order."""
-        primary_metric_order = [Metric.UTILITY, Metric.BASIC_QUALITY, Metric.ADVANCED_QUALITY, Metric.LIKELIHOOD,
-                                Metric.PAI, Metric.PROPENSITY, Metric.DISTANCE, Metric.SINGLING_OUT, Metric.LINKABILITY]
+        primary_metric_order = [
+            Metric.UTILITY,
+            Metric.BASIC_QUALITY,
+            Metric.ADVANCED_QUALITY,
+            Metric.LIKELIHOOD,
+            Metric.PAI,
+            Metric.PROPENSITY,
+            Metric.DISTANCE,
+            Metric.SINGLING_OUT,
+            Metric.LINKABILITY,
+        ]
 
         sorted_results = pd.DataFrame()
 
