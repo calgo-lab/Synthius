@@ -135,6 +135,7 @@ def load_config(path: Path) -> TabDiffConfig:
                 The config loaded as TabDiffConfig.
     """
     with path.open("rb") as f:
+        logger.warning("!!Loading the model config %s with the provided parameters in it!!", str(path))
         toml_data = tomli.load(f)
         # Build the dataclasses from the TOML
         data_cfg = DataConfig(**toml_data["data"])
@@ -169,10 +170,9 @@ def load_config(path: Path) -> TabDiffConfig:
 class TabDiffSynthesizer(Synthesizer):
     """Tabular data synthesizer using a TabDiff::UnifiedCtimeDiffusion model."""
 
-    def __init__(self, data_name: str, exp_name: str | None = None, id_column: str | None = None, gpu: int = -1) -> None:
+    def __init__(self, id_column: str | None = None, gpu: int = -1) -> None:
         """Initialize the TabDiffSynthesizer."""
-        self.data_name = data_name
-        self.exp_name = exp_name if exp_name is not None else "learnable_schedule"
+        self.exp_name = "learnable_schedule"
         self.id_column = id_column
         if gpu != -1 and torch.cuda.is_available():
             self.device = f"cuda:{gpu}"
@@ -201,8 +201,8 @@ class TabDiffSynthesizer(Synthesizer):
         self.raw_config.unimodmlp_params.d_numerical = d_numerical
         self.raw_config.unimodmlp_params.categories = (self.categories + 1).tolist()
 
-        self.raw_config.model_save_path = TABDIFF_BASE_PATH / "tabdiff" / f"ckpt/{self.data_name}/{self.exp_name}"
-        self.raw_config.result_save_path = TABDIFF_BASE_PATH / "tabdiff" / f"result/{self.data_name}/{self.exp_name}"
+        self.raw_config.model_save_path = TABDIFF_BASE_PATH / "tabdiff" / f"ckpt/{self.exp_name}"
+        self.raw_config.result_save_path = TABDIFF_BASE_PATH / "tabdiff" / f"result/{self.exp_name}"
 
         logger.info("TabDiff: Model save path %s", self.raw_config.model_save_path)
         logger.info("TabDiff: Result path %s", self.raw_config.result_save_path)
