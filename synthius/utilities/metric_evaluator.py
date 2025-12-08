@@ -542,11 +542,11 @@ class MetricsAggregator:
                 # Inference attack is a special case and there are multiple rows
                 # e.g Inference Attack | Workclass, Inference Attack | Rac
                 all_inference_metrics = self.all_results.index.get_level_values(0).str.startswith("Inference Attack")
-                if self.all_results[all_inference_metrics]["Original"].isna().all():
+                if "Original" not in self.all_results.columns or self.all_results[all_inference_metrics]["Original"].isna().all():
                     metric_fn()  # type: ignore[operator]
                 else:
                     logging.info("%s for Original exists. Skipping...", metric)
-            elif self.all_results["Original"].loc[metric].isna().all():
+            elif "Original" not in self.all_results.columns or self.all_results["Original"].loc[metric].isna().all():
                 metric_fn()  # type: ignore[operator]
             else:
                 logging.info("%s for Original exists. Skipping...", metric)
