@@ -78,6 +78,7 @@ class DataImputationPreprocessor:
         self.decimal_places: dict[str, int] = {}
         self.fill_values: dict[str, float] = {}
         self.id_column_index: int | None = None
+        self.original_column_order = data.columns.to_list()
 
         self.random_generator = np.random.default_rng()
 
@@ -87,6 +88,8 @@ class DataImputationPreprocessor:
                 self.data = self.data.drop(self.id_column, axis=1)
             else:
                 logger.warning("The ID column %s does not exist in the dataset.", self.id_column)
+        self.cat_cols: list = self.data.select_dtypes(include=["object", "bool"]).columns.to_list()
+        self.num_cols: list = self.data.select_dtypes(include=["int64", "float64"]).columns.to_list()
 
     def get_decimal_places(self: DataImputationPreprocessor, series: pd.Series) -> int:
         """Calculate the number of decimal places in a given series.
@@ -135,11 +138,13 @@ class DataImputationPreprocessor:
 
         return processed_data
 
-    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame, multiply_categories: bool = True) -> pd.DataFrame:  # noqa: FBT001, FBT002
         """Reverse the transformation by scaling back and reintroducing missing values.
 
         Args:
             processed_data (pd.DataFrame): The transformed DataFrame to inverse transform.
+            multiply_categories (bool, optional): Whether to multiply the categorical columns by their cardinality.
+                (Note: In TabDiff this is implicitly handled, and we want to avoid it here).
 
         Returns:
             pd.DataFrame: The original DataFrame with imputed values and reintroduced missing values.
@@ -156,8 +161,9 @@ class DataImputationPreprocessor:
                 if col in self.float_cols:
                     original_data[col] = original_data[col].round(self.decimal_places[col])
             elif col not in self.bool_cols:
-                original_data[col] = (original_data[col] * (self.label_encoders[col].classes_.size - 1)).round().astype(int)
-                original_data[col] = self.label_encoders[col].inverse_transform(original_data[col])
+                if multiply_categories:  # in TabDiff this is implicitly handled
+                    original_data[col] = (original_data[col] * (self.label_encoders[col].classes_.size - 1)).round()
+                original_data[col] = self.label_encoders[col].inverse_transform(original_data[col].astype(int))
 
         # Convert boolean columns back to booleans
         bool_cols = [col for col in self.bool_cols if col in original_data.columns and col != self.id_column]
@@ -181,4 +187,4 @@ class DataImputationPreprocessor:
             random_ids = [f"ID-{rng.integers(10000000, 99999999)}" for _ in range(len(original_data))]
             original_data.insert(self.id_column_index, self.id_column, random_ids)
 
-        return original_data
+        return original_data[self.original_column_order]

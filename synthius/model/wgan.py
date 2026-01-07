@@ -281,8 +281,9 @@ class WGAN(Model):
 class WGANSynthesizer(Synthesizer):
     """Tabular data synthesizer using a WGAN (Wasserstein GAN) model."""
 
-    def __init__(self) -> None:
+    def __init__(self, id_column: str | None = None) -> None:
         """Initialize the WGANSynthesizer."""
+        self.id_column = id_column
         self.model: WGAN
         self.preprocessor: DataImputationPreprocessor
         self.processed_data: pd.DataFrame
@@ -296,7 +297,7 @@ class WGANSynthesizer(Synthesizer):
             train_data : pd.DataFrame
                 Tabular dataset to train the WGAN model.
         """
-        self.preprocessor = DataImputationPreprocessor(train_data)
+        self.preprocessor = DataImputationPreprocessor(train_data, self.id_column)
         self.processed_data = self.preprocessor.fit_transform()
         n_features = self.processed_data.shape[1]
 

@@ -14,6 +14,7 @@ from synthius.model import (
     SDVTVAESynthesizer,
     Synthesizer,
     SynthesizerGaussianMultivariate,
+    TabDiffSynthesizer,
 )
 
 
@@ -115,6 +116,7 @@ def _generate(  # noqa: PLR0913
             SDVTVAESynthesizer(),
             SynthesizerGaussianMultivariate(results_path=synth_dir),
             ARFSynthesizer(id_column=id_column),
+            TabDiffSynthesizer(id_column=id_column),
         ]
 
     # Run each model
