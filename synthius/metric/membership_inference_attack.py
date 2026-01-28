@@ -343,7 +343,8 @@ class MIAMetric(BaseMetric):
         # For every synthetic dataset ...
         for synth in self.synthetic_data_paths:
             synthetic_data = pd.read_csv(synth)
-            synthetic_data = synthetic_data.drop([self.id_column], axis=1)
+            if self.id_column is not None:
+                synthetic_data = synthetic_data.drop([self.id_column], axis=1)
 
             # ... run a Black box attack (trains on synthetic, tests on synthetic/real test) ...
             mia_basic = MIABbox(train_data=synthetic_data, test_data=self.test_data, label=self.label)
