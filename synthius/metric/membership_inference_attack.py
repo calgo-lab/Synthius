@@ -82,6 +82,7 @@ class MIABbox:
         self._preprocess_data()
 
         self.attack_train_ratio = attack_train_ratio
+        self.art_classifier = None
 
     def _preprocess_data(self) -> None:
         """Preprocesses the data with a sklearn preprocessing pipeline."""
@@ -176,6 +177,9 @@ class MIAShadow:
         self.test_data = test_data
         self.label = label
         self._preprocess_data()
+
+        self.art_classifier = None
+        self.shadow_models: ShadowModels | None = None
 
         self.n_shadows = n_shadow_models
         self.random_state = random_state
