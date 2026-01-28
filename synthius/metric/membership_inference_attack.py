@@ -23,8 +23,7 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 
-def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray, n_true: int,
-                      n_false: int) -> dict:
+def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray, n_true: int, n_false: int) -> dict:
     """Calculates the classification metrics and returns them as a dictionary.
 
     :param y_true: The true labels.
@@ -68,8 +67,7 @@ class MIABbox:
 
     """
 
-    def __init__(self, train_data: pd.DataFrame, test_data: pd.DataFrame, label: str,
-                 attack_train_ratio: float = 0.5) -> None:
+    def __init__(self, train_data: pd.DataFrame, test_data: pd.DataFrame, label: str, attack_train_ratio: float = 0.5) -> None:
         """A Black Box Membership Inference Attack (MIA).
 
         :param train_data: The training data for both target and attack model.
@@ -108,11 +106,7 @@ class MIABbox:
 
     def train_target_model(self) -> None:
         """Trains the target, downstream RandomForestClassifier, and wraps it in ScikitlearnRandomForestClassifier."""
-        model = RandomForestClassifier(
-            n_estimators=100,
-            random_state=42,
-            n_jobs=-1
-        )
+        model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
 
         model.fit(self.x_train, self.y_train)
         self.art_classifier = ScikitlearnRandomForestClassifier(model)
@@ -127,25 +121,24 @@ class MIABbox:
         self.attack_test_size = int(self.x_test.shape[0] * self.attack_train_ratio)
 
         self.bb_attack = MembershipInferenceBlackBox(self.art_classifier)
-        self.bb_attack.fit(self.x_train[:self.attack_train_size], self.y_train[:self.attack_train_size],
-                           self.x_test[:self.attack_test_size], self.y_test[:self.attack_test_size])
+        self.bb_attack.fit(
+            self.x_train[: self.attack_train_size],
+            self.y_train[: self.attack_train_size],
+            self.x_test[: self.attack_test_size],
+            self.y_test[: self.attack_test_size],
+        )
 
     def infer(self) -> dict[str, float]:
         """Infers the membership of the holdout train and holdout test sets."""
         if self.bb_attack is None:
             raise ValueError("An attack-attack() needs to be performed before inference.")  # noqa: TRY003, EM101
-        inferred_members = self.bb_attack.infer(self.x_train[self.attack_train_size:],
-                                                self.y_train[self.attack_train_size:])
-        inferred_nonmembers = self.bb_attack.infer(self.x_test[self.attack_test_size:],
-                                                   self.y_test[self.attack_test_size:])
+        inferred_members = self.bb_attack.infer(self.x_train[self.attack_train_size :], self.y_train[self.attack_train_size :])
+        inferred_nonmembers = self.bb_attack.infer(self.x_test[self.attack_test_size :], self.y_test[self.attack_test_size :])
 
         y_pred = np.concatenate((inferred_members, inferred_nonmembers))
         y_true = np.concatenate((np.ones_like(inferred_members), np.zeros_like(inferred_nonmembers)))
 
-        return calculate_metrics(y_true=y_true,
-                                 y_pred=y_pred,
-                                 n_true=len(inferred_members),
-                                 n_false=len(inferred_nonmembers))
+        return calculate_metrics(y_true=y_true, y_pred=y_pred, n_true=len(inferred_members), n_false=len(inferred_nonmembers))
 
 
 # ruff: noqa: PLR0913
@@ -161,8 +154,9 @@ class MIAShadow:
 
     """
 
-    def __init__(self, train_data: pd.DataFrame, shadow_data: pd.DataFrame, test_data: pd.DataFrame, label: str,
-                 n_shadow_models: int = 3, random_state: int = 42) -> None:
+    def __init__(
+        self, train_data: pd.DataFrame, shadow_data: pd.DataFrame, test_data: pd.DataFrame, label: str, n_shadow_models: int = 3, random_state: int = 42
+    ) -> None:
         """A Shadow-based Membership Inference Attack (MIA).
 
         :param train_data: The original training data used for the attack inference only.
@@ -196,9 +190,7 @@ class MIAShadow:
                 ("num", StandardScaler(), numerical_cols),
             ]
         )
-        preprocessor.fit(pd.concat([self.train_data[input_cols],
-                                    self.shadow_data[input_cols],
-                                    self.test_data[input_cols]]))
+        preprocessor.fit(pd.concat([self.train_data[input_cols], self.shadow_data[input_cols], self.test_data[input_cols]]))
 
         label_encoder = LabelEncoder()
 
@@ -213,11 +205,7 @@ class MIAShadow:
 
     def train_target_model(self) -> None:
         """Trains the target, downstream RandomForestClassifier, and wraps it in ScikitlearnRandomForestClassifier."""
-        model = RandomForestClassifier(
-            n_estimators=100,
-            random_state=self.random_state,
-            n_jobs=1
-        )
+        model = RandomForestClassifier(n_estimators=100, random_state=self.random_state, n_jobs=1)
 
         model.fit(self.x_train, self.y_train)
         self.art_classifier = ScikitlearnRandomForestClassifier(model)
@@ -229,12 +217,8 @@ class MIAShadow:
 
         self.shadow_models = ShadowModels(self.art_classifier, num_shadow_models=self.n_shadows)
 
-        shadow_dataset = self.shadow_models.generate_shadow_dataset(self.x_shadow,
-                                                                    to_categorical(self.y_shadow,
-                                                                                   nb_classes=
-                                                                                   np.unique(self.y_shadow).shape[0]))
-        ((self.member_x, self.member_y, self.member_predictions),
-         (self.nonmember_x, self.nonmember_y, self.nonmember_predictions)) = shadow_dataset
+        shadow_dataset = self.shadow_models.generate_shadow_dataset(self.x_shadow, to_categorical(self.y_shadow, nb_classes=np.unique(self.y_shadow).shape[0]))
+        ((self.member_x, self.member_y, self.member_predictions), (self.nonmember_x, self.nonmember_y, self.nonmember_predictions)) = shadow_dataset
 
     def attack(self) -> None:
         """Performs the Black Box attack with the shadow model derived data."""
@@ -242,8 +226,7 @@ class MIAShadow:
             self.train_shadow()
 
         self.bb_attack = MembershipInferenceBlackBox(self.art_classifier, attack_model_type="rf")
-        self.bb_attack.fit(self.member_x, self.member_y, self.nonmember_x, self.nonmember_y,
-                           self.member_predictions, self.nonmember_predictions)
+        self.bb_attack.fit(self.member_x, self.member_y, self.nonmember_x, self.nonmember_y, self.member_predictions, self.nonmember_predictions)
 
     def infer(self) -> dict[str, float]:
         """Runs the inference on the attack model and returns the classification metrics.
@@ -259,17 +242,13 @@ class MIAShadow:
         y_pred = np.concatenate((inferred_members, inferred_nonmembers))
         y_true = np.concatenate((np.ones_like(inferred_members), np.zeros_like(inferred_nonmembers)))
 
-        return calculate_metrics(y_true=y_true,
-                                 y_pred=y_pred,
-                                 n_true=len(inferred_members),
-                                 n_false=len(inferred_nonmembers))
+        return calculate_metrics(y_true=y_true, y_pred=y_pred, n_true=len(inferred_members), n_false=len(inferred_nonmembers))
 
 
 class MIAMetric(BaseMetric):
     """A Metric for running Membership Inference Attacks (MIA), both Black Box and Shadow-based."""
 
-    def __init__(self, train_data_path: Path, test_data_path: Path | None,
-                 synthetic_data_paths: list[Path], label: str, id_column: str | None) -> None:
+    def __init__(self, train_data_path: Path, test_data_path: Path | None, synthetic_data_paths: list[Path], label: str, id_column: str | None) -> None:
         """A Metric for running Membership Inference Attacks (MIA), both Black Box and Shadow-based.
 
         :param train_data_path: The path to the train data.
@@ -349,19 +328,22 @@ class MIAMetric(BaseMetric):
         mia_basic.attack()
         bbox = mia_basic.infer()
 
-        rows.append({
-            "Model Name": "Original",
-            "BBox - Acc": bbox["attack_accuracy"],
-            "BBox - TPR": bbox["member_tpr"],
-            "BBox - PPV": bbox["member_ppv"],
-            "BBox - FPR": bbox["nonmember_fpr"],
-            "BBox - FNR": bbox["nonmember_tnr"],
-            "BBox - Adv": bbox["advantage"],
-        })
+        rows.append(
+            {
+                "Model Name": "Original",
+                "BBox - Acc": bbox["attack_accuracy"],
+                "BBox - TPR": bbox["member_tpr"],
+                "BBox - PPV": bbox["member_ppv"],
+                "BBox - FPR": bbox["nonmember_fpr"],
+                "BBox - FNR": bbox["nonmember_tnr"],
+                "BBox - Adv": bbox["advantage"],
+            }
+        )
 
         # For every synthetic dataset ...
         for synth in self.synthetic_data_paths:
             synthetic_data = pd.read_csv(synth)
+            synthetic_data = synthetic_data.drop([self.id_column], axis=1)
 
             # ... run a Black box attack (trains on synthetic, tests on synthetic/real test) ...
             mia_basic = MIABbox(train_data=synthetic_data, test_data=self.test_data, label=self.label)
@@ -369,27 +351,26 @@ class MIAMetric(BaseMetric):
             bbox = mia_basic.infer()
 
             # ... then run a shadow (trained on real train, shadows on synthetic, evaluated on real train/test) ...
-            mia_shadow = MIAShadow(train_data=self.train_data, shadow_data=synthetic_data,
-                                   test_data=self.test_data, label=self.label)
+            mia_shadow = MIAShadow(train_data=self.train_data, shadow_data=synthetic_data, test_data=self.test_data, label=self.label)
             mia_shadow.attack()
             shadow = mia_shadow.infer()
 
-            rows.append({
-                "Model Name": synth.stem,
-
-                "BBox - Acc": bbox["attack_accuracy"],
-                "BBox - TPR": bbox["member_tpr"],
-                "BBox - PPV": bbox["member_ppv"],
-                "BBox - FPR": bbox["nonmember_fpr"],
-                "BBox - FNR": bbox["nonmember_tnr"],
-                "BBox - Adv": bbox["advantage"],
-
-                "Shadow - Acc": shadow["attack_accuracy"],
-                "Shadow - TPR": shadow["member_tpr"],
-                "Shadow - PPV": shadow["member_ppv"],
-                "Shadow - FPR": shadow["nonmember_fpr"],
-                "Shadow - FNR": shadow["nonmember_tnr"],
-                "Shadow - Adv": shadow["advantage"],
-            })
+            rows.append(
+                {
+                    "Model Name": synth.stem,
+                    "BBox - Acc": bbox["attack_accuracy"],
+                    "BBox - TPR": bbox["member_tpr"],
+                    "BBox - PPV": bbox["member_ppv"],
+                    "BBox - FPR": bbox["nonmember_fpr"],
+                    "BBox - FNR": bbox["nonmember_tnr"],
+                    "BBox - Adv": bbox["advantage"],
+                    "Shadow - Acc": shadow["attack_accuracy"],
+                    "Shadow - TPR": shadow["member_tpr"],
+                    "Shadow - PPV": shadow["member_ppv"],
+                    "Shadow - FPR": shadow["nonmember_fpr"],
+                    "Shadow - FNR": shadow["nonmember_tnr"],
+                    "Shadow - Adv": shadow["advantage"],
+                }
+            )
 
         return rows
