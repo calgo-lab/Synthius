@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import LabelEncoder, QuantileTransformer
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler, OrdinalEncoder, QuantileTransformer
 
 if TYPE_CHECKING:
     import pandas as pd
 
 logger = getLogger()
+
+SEED = 0
 
 
 class DataImputationPreprocessor:
@@ -57,18 +59,21 @@ class DataImputationPreprocessor:
     ```
     """
 
-    def __init__(self: DataImputationPreprocessor, data: pd.DataFrame, id_column: str | None = None) -> None:
+    def __init__(self: DataImputationPreprocessor, data: pd.DataFrame, id_column: str | None = None,
+                 support_tabdiff: bool = False) -> None:  # noqa: FBT001, FBT002
         """Initialize the DataImputationPreprocessor with the given DataFrame.
 
         Args:
             data (pd.DataFrame): The input data to preprocess.
             id_column (str | None): The name of the ID column, if any.
+            support_tabdiff (bool): Whether some preprocessing should be avoided due to TabDiff's own processing.
 
         """
         self.data: pd.DataFrame = data
         self.id_column: str | None = id_column
         self.label_encoders: dict[str, LabelEncoder] = {}
-        self.scalers: dict[str, QuantileTransformer] = {}
+        self.ordinal_encoders: dict[str, OrdinalEncoder] = {}
+        self.scalers: dict[str, QuantileTransformer | MinMaxScaler] = {}
         self.imputers: dict[str, SimpleImputer] = {}
         self.col_types: pd.Series = data.dtypes
         self.bool_cols: pd.Index = data.select_dtypes(include="bool").columns
@@ -79,6 +84,7 @@ class DataImputationPreprocessor:
         self.fill_values: dict[str, float] = {}
         self.id_column_index: int | None = None
         self.original_column_order = data.columns.to_list()
+        self.support_tabdiff = support_tabdiff
 
         self.random_generator = np.random.default_rng()
 
@@ -90,6 +96,8 @@ class DataImputationPreprocessor:
                 logger.warning("The ID column %s does not exist in the dataset.", self.id_column)
         self.cat_cols: list = self.data.select_dtypes(include=["object", "bool"]).columns.to_list()
         self.num_cols: list = self.data.select_dtypes(include=["int64", "float64"]).columns.to_list()
+        self.cat_cols = [c for c in self.cat_cols if c != self.id_column]
+        self.num_cols = [c for c in self.num_cols if c != self.id_column]
 
     def get_decimal_places(self: DataImputationPreprocessor, series: pd.Series) -> int:
         """Calculate the number of decimal places in a given series.
@@ -128,23 +136,32 @@ class DataImputationPreprocessor:
             self.fill_values[col] = self.imputers[col].statistics_[0]
 
         for col in processed_data.columns:
-            if col in self.float_cols or col in self.int_cols:
+            if col in self.int_cols and self.support_tabdiff:  # Tabdiff requires special processing for int
+                self.scalers[col] = QuantileTransformer(
+                    output_distribution="normal",
+                    n_quantiles=max(min(processed_data.shape[0], 1000), 10),
+                    subsample=int(1e9),
+                    random_state=SEED,
+                )
+                processed_data[col] = self.scalers[col].fit_transform(processed_data[[col]])
+
+            elif col in self.float_cols or col in self.int_cols:
                 self.scalers[col] = QuantileTransformer(output_distribution="uniform")
                 processed_data[col] = self.scalers[col].fit_transform(processed_data[[col]])
+
             elif col not in self.bool_cols:
-                self.label_encoders[col] = LabelEncoder()
-                processed_data[col] = self.label_encoders[col].fit_transform(processed_data[col])
-                processed_data[col] = processed_data[col] / processed_data[col].max()
+                self.ordinal_encoders[col] = OrdinalEncoder()
+                processed_data[col] = self.ordinal_encoders[col].fit_transform(processed_data[[col]]).astype(int).ravel()
+                if not self.support_tabdiff:
+                    processed_data[col] = processed_data[col] / processed_data[col].max()
 
         return processed_data
 
-    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame, multiply_categories: bool = True) -> pd.DataFrame:  # noqa: FBT001, FBT002
+    def inverse_transform(self: DataImputationPreprocessor, processed_data: pd.DataFrame) -> pd.DataFrame:
         """Reverse the transformation by scaling back and reintroducing missing values.
 
         Args:
             processed_data (pd.DataFrame): The transformed DataFrame to inverse transform.
-            multiply_categories (bool, optional): Whether to multiply the categorical columns by their cardinality.
-                (Note: In TabDiff this is implicitly handled, and we want to avoid it here).
 
         Returns:
             pd.DataFrame: The original DataFrame with imputed values and reintroduced missing values.
@@ -160,10 +177,13 @@ class DataImputationPreprocessor:
                 # Round to original decimal places for float columns
                 if col in self.float_cols:
                     original_data[col] = original_data[col].round(self.decimal_places[col])
+                elif col in self.int_cols:
+                    original_data[col] = np.rint(original_data[col]).astype(int)
             elif col not in self.bool_cols:
-                if multiply_categories:  # in TabDiff this is implicitly handled
-                    original_data[col] = (original_data[col] * (self.label_encoders[col].classes_.size - 1)).round()
-                original_data[col] = self.label_encoders[col].inverse_transform(original_data[col].astype(int))
+                if not self.support_tabdiff:  # in TabDiff this is implicitly handled
+                    original_data[col] = (original_data[col] * (self.ordinal_encoders[col].categories_.size - 1)).round()
+
+                original_data[col] = self.ordinal_encoders[col].inverse_transform(original_data[[col]]).ravel()
 
         # Convert boolean columns back to booleans
         bool_cols = [col for col in self.bool_cols if col in original_data.columns and col != self.id_column]
