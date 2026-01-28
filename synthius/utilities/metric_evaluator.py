@@ -15,6 +15,8 @@ import torch
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
+from synthius.metric.membership_inference_attack import MIAMetric
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -52,6 +54,7 @@ METRIC_CLASSES = {
     "PropensityScore": PropensityScore,
     "SinglingOutMetric": SinglingOutMetric,
     "InferenceMetric": InferenceMetric,
+    "MIAMetric": MIAMetric
 }
 
 
@@ -68,6 +71,7 @@ class Metric(str, Enum):
     SINGLING_OUT = "Singling Out"
     LINKABILITY = "Linkability"
     INFERENCE = "Inference Attack"
+    MIA = "MIA"
 
 
 def handle_errors(func: Callable[..., R]) -> Callable[..., R | None]:
@@ -186,33 +190,33 @@ class MetricsAggregator:
     """
 
     def __init__(  # noqa: PLR0913
-        self: MetricsAggregator,
-        real_data_path: Path,
-        synthetic_data_paths: list[Path],
-        control_data: Path | None,
-        key_fields: list[str],
-        sensitive_fields: list[str],
-        distance_scaler: str,
-        singlingout_mode: str,
-        singlingout_n_attacks: int,
-        singlingout_n_cols: int | None,
-        linkability_n_neighbors: int,
-        linkability_n_attacks: int | None,
-        linkability_aux_cols: tuple[list[str], list[str]],
-        inference_n_attacks: int | None,
-        inference_all_columns: list[str],
-        inference_sample_attacks: bool,  # noqa: FBT001
-        inference_use_custom_model: bool,  # noqa: FBT001
-        id_column: str | None,
-        utility_test_path: Path,
-        utility_models_path: Path,
-        label_column: str,
-        *,
-        want_parallel: bool | None = None,
-        pos_label: bool | str = True,
-        need_split: bool = True,
-        load_data_now: bool = True,
-        force_evaluation: bool = False,
+            self: MetricsAggregator,
+            real_data_path: Path,
+            synthetic_data_paths: list[Path],
+            control_data: Path | None,
+            key_fields: list[str],
+            sensitive_fields: list[str],
+            distance_scaler: str,
+            singlingout_mode: str,
+            singlingout_n_attacks: int,
+            singlingout_n_cols: int | None,
+            linkability_n_neighbors: int,
+            linkability_n_attacks: int | None,
+            linkability_aux_cols: tuple[list[str], list[str]],
+            inference_n_attacks: int | None,
+            inference_all_columns: list[str],
+            inference_sample_attacks: bool,  # noqa: FBT001
+            inference_use_custom_model: bool,  # noqa: FBT001
+            id_column: str | None,
+            utility_test_path: Path,
+            utility_models_path: Path,
+            label_column: str,
+            *,
+            want_parallel: bool | None = None,
+            pos_label: bool | str = True,
+            need_split: bool = True,
+            load_data_now: bool = True,
+            force_evaluation: bool = False,
     ) -> None:
         """Initializes the MetricsAggregator with dataset paths, fields, and configuration for metrics."""
         self.real_data_path = real_data_path
@@ -474,7 +478,8 @@ class MetricsAggregator:
 
         metric_name = "Utility"
 
-        if not self.all_results.empty and metric_name in self.all_results.index.get_level_values("Metric Type").unique():
+        if not self.all_results.empty and metric_name in self.all_results.index.get_level_values(
+                "Metric Type").unique():
             for index, row in result.iterrows():
                 self.all_results.loc[(metric_name, index), :] = row
         else:
@@ -483,6 +488,15 @@ class MetricsAggregator:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         gc.collect()
+
+    def run_mia_metric(self: MetricsAggregator) -> None:
+        """Runs the Membership Inference Attack (MIA) metric evaluation."""
+        mia_metric = MIAMetric(train_data_path=self.real_data_path,
+                               test_data_path=self.control_data,
+                               synthetic_data_paths=self.synthetic_data_paths,
+                               label=self.label_column,
+                               id_column=self.id_column)
+        self.add_metrics(mia_metric)
 
     def run_metrics_for_original(self: MetricsAggregator) -> None:
         """Run metrics for original dataset.
@@ -535,6 +549,7 @@ class MetricsAggregator:
             Metric.SINGLING_OUT: temp_aggregator.run_singling_out_metric,
             Metric.LINKABILITY: temp_aggregator.run_linkability_metric,
             Metric.INFERENCE: temp_aggregator.run_inference_metric,
+            Metric.MIA: temp_aggregator.run_mia_metric,
         }
 
         for metric, metric_fn in metrics_to_run.items():
@@ -542,7 +557,8 @@ class MetricsAggregator:
                 # Inference attack is a special case and there are multiple rows
                 # e.g Inference Attack | Workclass, Inference Attack | Rac
                 all_inference_metrics = self.all_results.index.get_level_values(0).str.startswith("Inference Attack")
-                if "Original" not in self.all_results.columns or self.all_results[all_inference_metrics]["Original"].isna().all():
+                if "Original" not in self.all_results.columns or self.all_results[all_inference_metrics][
+                    "Original"].isna().all():
                     metric_fn()  # type: ignore[operator]
                 else:
                     logging.info("%s for Original exists. Skipping...", metric)
@@ -575,10 +591,10 @@ class MetricsAggregator:
     def _metric_computed(self, metric: str) -> bool:
         """Checks if the `metric` is already computed for all synthetic datasets."""
         return (
-            metric in self.all_results.index
-            and not self.force_evaluation
-            and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
-            and not self.all_results.loc[[metric]].isna().all(axis=None)
+                metric in self.all_results.index
+                and not self.force_evaluation
+                and self.all_results.loc[[metric]].shape[1] >= len(self.synthetic_data_paths)
+                and not self.all_results.loc[[metric]].isna().all(axis=None)
         )
 
     def run_metrics_for_models(self: MetricsAggregator) -> pd.DataFrame:  # noqa: C901, PLR0912, PLR0915
@@ -650,6 +666,13 @@ class MetricsAggregator:
             self.all_results.to_pickle(self._results_path)
             logging.info("Linkability Done")
 
+        if self._metric_computed(Metric.MIA):
+            logging.info("Membership Inference Attack - MIA already computed. Skipping...")
+        else:
+            self.run_mia_metric()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("MIA Done")
+
         # e.g: Inference Attack | Fnlwgt, Inference Attack | Hoursperweek, Inference Attack | Race
         if self.all_results.index.get_level_values(0).str.startswith(Metric.INFERENCE).any():
             logging.info("Inference Attack already computed. Skipping...")
@@ -680,6 +703,7 @@ class MetricsAggregator:
             Metric.PAI,
             Metric.PROPENSITY,
             Metric.DISTANCE,
+            Metric.MIA,
             Metric.SINGLING_OUT,
             Metric.LINKABILITY,
         ]
