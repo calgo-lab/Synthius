@@ -59,8 +59,7 @@ class DataImputationPreprocessor:
     ```
     """
 
-    def __init__(self: DataImputationPreprocessor, data: pd.DataFrame, id_column: str | None = None,
-                 support_tabdiff: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(self: DataImputationPreprocessor, data: pd.DataFrame, id_column: str | None = None, support_tabdiff: bool = False) -> None:  # noqa: FBT001, FBT002
         """Initialize the DataImputationPreprocessor with the given DataFrame.
 
         Args:
