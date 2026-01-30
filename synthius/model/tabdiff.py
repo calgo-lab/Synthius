@@ -197,7 +197,7 @@ class TabDiffSynthesizer(Synthesizer):
                 Tabular dataset used for metadata extraction (originally used for the model training).
         """
         self.categories = np.array(get_categories(data[self.preprocessor.cat_cols].to_numpy()))
-        d_numerical = len(self.preprocessor.float_cols) + len(self.preprocessor.int_cols)
+        d_numerical = len(self.preprocessor.num_cols)
         self.raw_config.unimodmlp_params.d_numerical = d_numerical
         self.raw_config.unimodmlp_params.categories = (self.categories + 1).tolist()
 
@@ -216,9 +216,10 @@ class TabDiffSynthesizer(Synthesizer):
             data : pd.DataFrame
                 Tabular dataset used for creating self.preprocessor (originally used for the model training).
         """
-        self.preprocessor = DataImputationPreprocessor(data, self.id_column)
+        self.preprocessor = DataImputationPreprocessor(data, self.id_column, support_tabdiff=True)
+        self.preprocessed_data = self.preprocessor.fit_transform()
         self.data_cols = self.preprocessor.num_cols + self.preprocessor.cat_cols
-        self._update_config(data)
+        self._update_config(self.preprocessed_data)
 
     def _generate_torch_dataset(self) -> tuple[TorchDataset, DataLoader]:
         """Generates TorchDataset and DataLoader for TabDiff from self.preprocessor.
@@ -226,17 +227,18 @@ class TabDiffSynthesizer(Synthesizer):
         Returns:
             tuple[TorchDataset, DataLoader]: The dataset and dataloader for training TabDiff::UnifiedCtimeDiffusion.
         """
-        preprocessed_data = self.preprocessor.fit_transform()
         dataset = TorchDataset(
-            preprocessed_data[self.data_cols], d_numerical=self.raw_config.unimodmlp_params.d_numerical, categories=self.raw_config.unimodmlp_params.categories
+            self.preprocessed_data[self.data_cols],
+            d_numerical=self.raw_config.unimodmlp_params.d_numerical,
+            categories=self.categories.tolist(),
         )
-        train_loader = DataLoader(
+        data_loader = DataLoader(
             dataset,
             batch_size=self.raw_config.train.main.batch_size,
             shuffle=True,
             num_workers=self.raw_config.train.main.num_workers,
         )
-        return dataset, train_loader
+        return dataset, data_loader
 
     def _create_model(self, train_loader: DataLoader, train_dataset: TorchDataset) -> Trainer:
         """Creates the model for training (TabDiff::Trainer).
@@ -270,6 +272,11 @@ class TabDiffSynthesizer(Synthesizer):
         diffusion.train()
 
         sample_batch_size = self.raw_config.sample.batch_size
+
+        ckpt_parent_path = Path(self.raw_config.model_save_path)
+        ckpt_iter = ckpt_parent_path.rglob("best_ema_model_*")
+        ckpt_path = next(ckpt_iter, None)
+
         return Trainer(
             diffusion=diffusion,
             train_iter=train_loader,
@@ -279,14 +286,20 @@ class TabDiffSynthesizer(Synthesizer):
             logger=None,
             **asdict(self.raw_config.train.main),
             sample_batch_size=sample_batch_size,
-            num_samples_to_generate=0,
+            num_samples_to_generate=1024,
             model_save_path=self.raw_config.model_save_path,
             result_save_path=self.raw_config.result_save_path,
             device=self.device,
-            ckpt_path=None,
+            ckpt_path=ckpt_path,
             y_only=False,
             id_col=self.id_column,
         )
+
+    def _prep_model(self, data: pd.DataFrame) -> None:
+        """Prepares the Diffusion model."""
+        self._generate_processor(data)
+        dataset, data_loader = self._generate_torch_dataset()
+        self.model = self._create_model(train_dataset=dataset, train_loader=data_loader)
 
     def fit(self, train_data: pd.DataFrame) -> None:
         """Fit the TabDiff::UnifiedCtimeDiffusion model to training data.
@@ -295,9 +308,7 @@ class TabDiffSynthesizer(Synthesizer):
             train_data : pd.DataFrame
                 Tabular dataset to train the TabDiff::UnifiedCtimeDiffusion model.
         """
-        self._generate_processor(train_data)
-        dataset, data_loader = self._generate_torch_dataset()
-        self.model = self._create_model(train_dataset=dataset, train_loader=data_loader)
+        self._prep_model(train_data)
         self.model.run_loop()
 
     def generate(self, total_samples: int, conditions: list | None = None) -> pd.DataFrame:  # noqa: ARG002
@@ -315,4 +326,4 @@ class TabDiffSynthesizer(Synthesizer):
         """
         samples = self.model.sample(total_samples)
         data = pd.DataFrame(samples, columns=self.data_cols)
-        return self.preprocessor.inverse_transform(data, multiply_categories=False)  # tabdiff does this on its own
+        return self.preprocessor.inverse_transform(data)
