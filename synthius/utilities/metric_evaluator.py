@@ -15,6 +15,8 @@ import torch
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
+from synthius.metric.membership_inference_attack import MIAMetric
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -52,6 +54,7 @@ METRIC_CLASSES = {
     "PropensityScore": PropensityScore,
     "SinglingOutMetric": SinglingOutMetric,
     "InferenceMetric": InferenceMetric,
+    "MIAMetric": MIAMetric,
 }
 
 
@@ -68,6 +71,7 @@ class Metric(str, Enum):
     SINGLING_OUT = "Singling Out"
     LINKABILITY = "Linkability"
     INFERENCE = "Inference Attack"
+    MIA = "MIA"
 
 
 def handle_errors(func: Callable[..., R]) -> Callable[..., R | None]:
@@ -484,6 +488,17 @@ class MetricsAggregator:
             torch.cuda.empty_cache()
         gc.collect()
 
+    def run_mia_metric(self: MetricsAggregator) -> None:
+        """Runs the Membership Inference Attack (MIA) metric evaluation."""
+        mia_metric = MIAMetric(
+            train_data_path=self.real_data_path,
+            test_data_path=self.control_data,
+            synthetic_data_paths=self.synthetic_data_paths,
+            label=self.label_column,
+            id_column=self.id_column,
+        )
+        self.add_metrics(mia_metric)
+
     def run_metrics_for_original(self: MetricsAggregator) -> None:
         """Run metrics for original dataset.
 
@@ -535,6 +550,7 @@ class MetricsAggregator:
             Metric.SINGLING_OUT: temp_aggregator.run_singling_out_metric,
             Metric.LINKABILITY: temp_aggregator.run_linkability_metric,
             Metric.INFERENCE: temp_aggregator.run_inference_metric,
+            Metric.MIA: temp_aggregator.run_mia_metric,
         }
 
         for metric, metric_fn in metrics_to_run.items():
@@ -650,6 +666,13 @@ class MetricsAggregator:
             self.all_results.to_pickle(self._results_path)
             logging.info("Linkability Done")
 
+        if self._metric_computed(Metric.MIA):
+            logging.info("Membership Inference Attack - MIA already computed. Skipping...")
+        else:
+            self.run_mia_metric()
+            self.all_results.to_pickle(self._results_path)
+            logging.info("MIA Done")
+
         # e.g: Inference Attack | Fnlwgt, Inference Attack | Hoursperweek, Inference Attack | Race
         if self.all_results.index.get_level_values(0).str.startswith(Metric.INFERENCE).any():
             logging.info("Inference Attack already computed. Skipping...")
@@ -680,6 +703,7 @@ class MetricsAggregator:
             Metric.PAI,
             Metric.PROPENSITY,
             Metric.DISTANCE,
+            Metric.MIA,
             Metric.SINGLING_OUT,
             Metric.LINKABILITY,
         ]
