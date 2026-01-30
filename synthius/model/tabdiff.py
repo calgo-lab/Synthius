@@ -326,4 +326,4 @@ class TabDiffSynthesizer(Synthesizer):
         """
         samples = self.model.sample(total_samples)
         data = pd.DataFrame(samples, columns=self.data_cols)
-        return self.preprocessor.inverse_transform(data)  #  tabdiff does this on its own
+        return self.preprocessor.inverse_transform(data)
