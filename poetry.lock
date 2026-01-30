@@ -46,6 +46,42 @@ test-trackers = ["comet-ml", "dvclive", "matplotlib", "swanlab[dashboard]", "ten
 testing = ["bitsandbytes", "datasets", "diffusers", "evaluate", "parameterized", "pytest (>=7.2.0)", "pytest-order", "pytest-subtests", "pytest-xdist", "scikit-learn", "scipy", "timm", "torchdata (>=0.8.0)", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
 
 [[package]]
+name = "adversarial-robustness-toolbox"
+version = "1.20.1"
+description = "Toolbox for adversarial machine learning."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "adversarial_robustness_toolbox-1.20.1-py3-none-any.whl", hash = "sha256:03b15b35d2a1a564a436b023ad90968d64542e3ff191c668bffb8207f38683f5"},
+    {file = "adversarial_robustness_toolbox-1.20.1.tar.gz", hash = "sha256:5bfd751a1b1a1a2a669d961f7df0de7a9e3d95e5695e7a75ee6748cd5a339203"},
+]
+
+[package.dependencies]
+numpy = ">=1.18.0"
+scikit-learn = ">=0.22.2"
+scipy = ">=1.4.1"
+setuptools = "*"
+six = "*"
+tqdm = "*"
+
+[package.extras]
+all = ["Pillow", "catboost", "cma", "ffmpeg-python", "h5py", "kornia", "librosa", "lightgbm", "matplotlib", "numba", "opencv-python", "pandas", "pydub", "resampy", "statsmodels", "tensorflow", "tensorflow-addons", "torch", "torchvision", "xgboost"]
+catboost = ["catboost"]
+docs = ["Pillow (>=6.0.0)", "matplotlib", "numpy (>=1.18.0)", "scikit-learn (>=0.22.2)", "scipy (>=1.4.1)", "six (>=1.13.0)", "sphinx (>=1.4)", "sphinx-autodoc-annotation", "sphinx-autodoc-typehints", "sphinx_rtd_theme"]
+gpy = ["GPy"]
+keras = ["h5py", "keras"]
+lightgbm = ["lightgbm"]
+non-framework = ["Pillow", "cma", "ffmpeg-python", "librosa", "matplotlib", "multiprocess", "numba", "opencv-python", "pandas", "pydub", "pytest", "pytest-cov", "pytest-flake8", "pytest-mock", "requests", "resampy", "sortedcontainers", "statsmodels", "timm"]
+pytorch = ["torch", "torchvision"]
+pytorch-audio = ["librosa", "pydub", "resampy", "torch", "torchaudio", "torchvision"]
+pytorch-image = ["Pillow", "ffmpeg-python", "kornia", "opencv-python", "torch", "torchvision"]
+tensorflow = ["h5py", "tensorflow"]
+tensorflow-audio = ["h5py", "librosa", "pydub", "resampy", "tensorflow"]
+tensorflow-image = ["Pillow", "ffmpeg-python", "h5py", "opencv-python", "tensorflow"]
+xgboost = ["xgboost"]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.4.4"
 description = "Happy Eyeballs for asyncio"
@@ -8963,4 +8999,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.12"
-content-hash = "761530503dfb430b7f704b0dde15067a39a1da3d9fbd236be825b667b5b05d90"
+content-hash = "837b7d5b48ef4cb5b69c0d1c64258909aa0ed5874e69ee6c94a9fa5b972460cd"
