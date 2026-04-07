@@ -180,7 +180,7 @@ class DataImputationPreprocessor:
                     original_data[col] = np.rint(original_data[col]).astype(int)
             elif col not in self.bool_cols:
                 if not self.support_tabdiff:  # in TabDiff this is implicitly handled
-                    original_data[col] = (original_data[col] * (self.ordinal_encoders[col].categories_.size - 1)).round()
+                    original_data[col] = (original_data[col] * (len(self.ordinal_encoders[col].categories_) - 1)).round()
 
                 original_data[col] = self.ordinal_encoders[col].inverse_transform(original_data[[col]]).ravel()
 
