@@ -352,7 +352,8 @@ class MIAMetric(BaseMetric):
             bbox = mia_basic.infer()
 
             # ... then run a shadow (trained on real train, shadows on synthetic, evaluated on real train/test) ...
-            mia_shadow = MIAShadow(train_data=self.train_data, shadow_data=synthetic_data, test_data=self.test_data, label=self.label)
+            n_shadow = max(self.train_data.shape[0] // 2_000, 10)
+            mia_shadow = MIAShadow(train_data=self.train_data, shadow_data=synthetic_data, test_data=self.test_data, label=self.label, n_shadow_models=n_shadow)
             mia_shadow.attack()
             shadow = mia_shadow.infer()
 
