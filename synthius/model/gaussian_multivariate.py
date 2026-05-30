@@ -53,7 +53,7 @@ class GaussianMultivariateSynthesizer:
         target_column: str | None = None,
         *,
         adjust_ratio: bool = False,
-    ) -> None:
+    ) -> pd.DataFrame:
         """Generates and saves synthetic data using the Gaussian Multivariate model.
 
         It optionally adjusts the distribution of a specified target column in the synthetic data
@@ -102,6 +102,7 @@ class GaussianMultivariateSynthesizer:
         save_path = self.output_path / filename
         synthetic_data.to_csv(save_path, index=False)
         logger.info("Synthetic data saved to %s", save_path)
+        return synthetic_data
 
     def adjust_ratio(
         self: GaussianMultivariateSynthesizer,
@@ -174,5 +175,4 @@ class SynthesizerGaussianMultivariate(Synthesizer):
             pd.DataFrame
                 Synthetic samples as a DataFrame.
         """
-        self.model.synthesize(num_sample=total_samples)
-        return pd.DataFrame()
+        return self.model.synthesize(num_sample=total_samples)

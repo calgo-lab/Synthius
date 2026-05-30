@@ -180,7 +180,8 @@ class DataImputationPreprocessor:
                     original_data[col] = np.rint(original_data[col]).astype(int)
             elif col not in self.bool_cols:
                 if not self.support_tabdiff:  # in TabDiff this is implicitly handled
-                    original_data[col] = (original_data[col] * (len(self.ordinal_encoders[col].categories_) - 1)).round()
+                    n_categories = len(self.ordinal_encoders[col].categories_[0]) - 1
+                    original_data[col] = (original_data[col] * n_categories).round()
 
                 original_data[col] = self.ordinal_encoders[col].inverse_transform(original_data[[col]]).ravel()
 
@@ -203,7 +204,15 @@ class DataImputationPreprocessor:
         # Reintroduce the original ID column if applicable
         if self.id_column_index is not None:
             rng = np.random.default_rng()
-            random_ids = [f"ID-{rng.integers(10000000, 99999999)}" for _ in range(len(original_data))]
+
+            random_numbers = rng.choice(
+                np.arange(10000000, 99999999),
+                size=len(original_data),
+                replace=False,
+            )
+
+            random_ids = [f"ID-{num}" for num in random_numbers]
+
             original_data.insert(self.id_column_index, self.id_column, random_ids)
 
         return original_data[self.original_column_order]

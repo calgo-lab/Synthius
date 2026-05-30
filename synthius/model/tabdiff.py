@@ -170,7 +170,8 @@ def load_config(path: Path) -> TabDiffConfig:
 class TabDiffSynthesizer(Synthesizer):
     """Tabular data synthesizer using a TabDiff::UnifiedCtimeDiffusion model."""
 
-    def __init__(self, id_column: str | None = None, gpu: int = -1) -> None:
+    def __init__(self, id_column: str | None = None, gpu: int = -1,
+                 save_path: Path | None = None) -> None:
         """Initialize the TabDiffSynthesizer."""
         self.exp_name = "learnable_schedule"
         self.id_column = id_column
@@ -185,6 +186,10 @@ class TabDiffSynthesizer(Synthesizer):
         self.raw_config: TabDiffConfig = load_config(CONFIG_PATH)
         self.data_cols: list
         self.categories: np.ndarray
+
+        tabdiff_base_path = Path(save_path) if save_path else TABDIFF_BASE_PATH / "tabdiff"
+        self.model_save_path = tabdiff_base_path / f"ckpt/{self.exp_name}"
+        self.result_save_path = tabdiff_base_path / f"result/{self.exp_name}"
 
     def _update_config(self, data: pd.DataFrame) -> None:
         """Updates self.raw_config with metadata from `data`.
@@ -201,8 +206,8 @@ class TabDiffSynthesizer(Synthesizer):
         self.raw_config.unimodmlp_params.d_numerical = d_numerical
         self.raw_config.unimodmlp_params.categories = (self.categories + 1).tolist()
 
-        self.raw_config.model_save_path = TABDIFF_BASE_PATH / "tabdiff" / f"ckpt/{self.exp_name}"
-        self.raw_config.result_save_path = TABDIFF_BASE_PATH / "tabdiff" / f"result/{self.exp_name}"
+        self.raw_config.model_save_path = self.model_save_path
+        self.raw_config.result_save_path = self.result_save_path
 
         logger.info("TabDiff: Model save path %s", self.raw_config.model_save_path)
         logger.info("TabDiff: Result path %s", self.raw_config.result_save_path)

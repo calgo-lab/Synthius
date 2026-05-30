@@ -23,6 +23,8 @@ def _compute_metrics(  # noqa: PLR0913
     inference_use_custom_model: bool = True,  # noqa: FBT001, FBT002
     inference_sample_attacks: bool = False,  # noqa: FBT001, FBT002
     inference_n_attacks: int | None = None,
+    results_checkpoint_path: Path | None = None,
+    want_parallel: bool = False # noqa: FBT001, FBT002
 ) -> None:
     """Module for running all Synthius evaluation metrics in batch mode.
 
@@ -87,8 +89,9 @@ def _compute_metrics(  # noqa: PLR0913
         inference_n_attacks=inference_n_attacks,
         label_column=target_column,
         pos_label=positive_label,
-        want_parallel=False,
+        want_parallel=want_parallel,
         need_split=False,
+        results_checkpoint_path=results_checkpoint_path
     )
 
     if metric_aggregator_mode is None:
