@@ -36,7 +36,7 @@ from synthius.metric import (
     SinglingOutMetric,
 )
 from synthius.metric.utils import clean_columns, format_value, generate_metadata, load_data
-from synthius.model import ModelLoader
+from synthius.model import ModelFitter, ModelLoader
 
 warnings.filterwarnings("ignore")
 
@@ -217,6 +217,7 @@ class MetricsAggregator:
         need_split: bool = True,
         load_data_now: bool = True,
         force_evaluation: bool = False,
+        results_checkpoint_path: Path | None = None
     ) -> None:
         """Initializes the MetricsAggregator with dataset paths, fields, and configuration for metrics."""
         self.real_data_path = real_data_path
@@ -241,7 +242,10 @@ class MetricsAggregator:
         self.inference_sample_attacks = inference_sample_attacks
         self.inference_use_custom_model = inference_use_custom_model
 
-        self._checkpoint_path = real_data_path.parent / "checkpoints"
+        if results_checkpoint_path is None:
+            self._checkpoint_path = real_data_path.parent / "checkpoints"
+        else:
+            self._checkpoint_path = results_checkpoint_path / "checkpoints"
         self._checkpoint_path.mkdir(exist_ok=True, parents=True)
 
         self.id_column = id_column
@@ -251,7 +255,7 @@ class MetricsAggregator:
         self._results_path = self._checkpoint_path / "results.pkl"
         if self._results_path.exists() and not self.force_evaluation:
             self.all_results = pd.read_pickle(self._results_path)  # noqa: S301
-            logging.info("Loaded saved results")
+            logging.info(f"Loaded saved results from {self._results_path!s}")
 
         if load_data_now:
             self.metadata = generate_metadata(load_data(self.real_data_path))
@@ -452,11 +456,28 @@ class MetricsAggregator:
                 logging.warning("Could not run Inference for secret=[%s]", secret)
                 logging.warning(e)
 
-    def run_utility_metric(self: MetricsAggregator) -> None:
+    def run_utility_metric(self: MetricsAggregator, synthetic_data_path: list=None) -> None:
         """Runs the utility metric evaluation."""
-        ModelLoader.results_list.clear()
-        experiment_names = [path.stem for path in self.synthetic_data_paths] + ["Original"]
+        if synthetic_data_path is None:
+            msg = "No synthetic data path was provided."
+            raise ValueError(msg)
+        experiment_names = [path.stem for path in synthetic_data_path]
 
+        for syn_path in synthetic_data_path:
+            exp = syn_path.stem
+            if not (self.utility_models_path / exp).exists():
+                msg = f"Fitting model for {exp}."
+                logging.info(msg)
+                ModelFitter(
+                    data_path=syn_path,
+                    label_column=self.label_column,
+                    experiment_name=exp,
+                    models_base_path=self.utility_models_path,
+                    test_data_path=self.utility_test_path,
+                    pos_label=self.pos_label
+                )
+
+        ModelLoader.results_list.clear()
         for exp in experiment_names:
             ModelLoader(
                 data_path=self.utility_test_path,
@@ -541,6 +562,7 @@ class MetricsAggregator:
 
         # Skip running utility metrics
         metrics_to_run = {
+            Metric.UTILITY: temp_aggregator.run_utility_metric,
             Metric.BASIC_QUALITY: temp_aggregator.run_basic_quality_metrics,
             Metric.ADVANCED_QUALITY: temp_aggregator.run_advanced_quality_metrics,
             Metric.LIKELIHOOD: temp_aggregator.run_likelihood_metrics,
@@ -557,9 +579,15 @@ class MetricsAggregator:
             if metric == Metric.INFERENCE:
                 # Inference attack is a special case and there are multiple rows
                 # e.g Inference Attack | Workclass, Inference Attack | Rac
-                all_inference_metrics = self.all_results.index.get_level_values(0).str.startswith("Inference Attack")
+                all_inference_metrics = (
+                    self.all_results.index.get_level_values(0).astype(str).str.startswith(Metric.INFERENCE)
+                )
                 if "Original" not in self.all_results.columns or self.all_results[all_inference_metrics]["Original"].isna().all():
-                    metric_fn()  # type: ignore[operator]
+                    if metric == Metric.UTILITY:
+                        synthetic_data_path = [path for path in self.synthetic_data_paths if "Original" in str(path)]
+                        metric_fn(synthetic_data_path)
+                    else:
+                        metric_fn()  # type: ignore[operator]
                 else:
                     logging.info("%s for Original exists. Skipping...", metric)
             elif "Original" not in self.all_results.columns or self.all_results["Original"].loc[metric].isna().all():
@@ -606,7 +634,8 @@ class MetricsAggregator:
         if self._metric_computed(Metric.UTILITY):
             logging.info("Utility already computed. Skipping...")
         else:
-            self.run_utility_metric()
+            synthetic_data_path = [path for path in self.synthetic_data_paths if "Original" not in str(path)]
+            self.run_utility_metric(synthetic_data_path=synthetic_data_path)
             self.all_results.to_pickle(self._results_path)
             logging.info("Utility Done")
 
@@ -674,7 +703,7 @@ class MetricsAggregator:
             logging.info("MIA Done")
 
         # e.g: Inference Attack | Fnlwgt, Inference Attack | Hoursperweek, Inference Attack | Race
-        if self.all_results.index.get_level_values(0).str.startswith(Metric.INFERENCE).any():
+        if self.all_results.index.get_level_values(0).astype(str).str.startswith(Metric.INFERENCE).any():
             logging.info("Inference Attack already computed. Skipping...")
         else:
             self.run_inference_metric()

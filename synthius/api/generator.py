@@ -1,5 +1,6 @@
 # The API for the generation of synthetic datasets.
 # 2025.10.29
+import logging
 from pathlib import Path
 
 import pandas as pd
@@ -39,19 +40,25 @@ def _preprocess_data(
         msg = f"Target column '{target_column}' not found in data."
         raise ValueError(msg)
 
-    train_data, test_data = train_test_split(
-        data,
-        test_size=0.2,
-        random_state=random_seed,
-        stratify=data[target_column],
-    )
+    if not ((data_path / "train.csv").exists() or (data_path / "test.csv").exists()):
+        train_data, test_data = train_test_split(
+            data,
+            test_size=0.2,
+            random_state=random_seed,
+            stratify=data[target_column],
+        )
 
-    # Save the train and test
-    train_file = data_path / "train.csv"
-    test_file = data_path / "test.csv"
+        # Save the train and test
+        train_file = data_path / "train.csv"
+        test_file = data_path / "test.csv"
 
-    train_data.to_csv(train_file, index=False)
-    test_data.to_csv(test_file, index=False)
+        train_data.to_csv(train_file, index=False)
+        test_data.to_csv(test_file, index=False)
+    else:
+        logging.info("Loading existing train and test data")
+        train_data = pd.read_csv(data_path / "train.csv")
+        test_data = pd.read_csv(data_path / "test.csv")
+
 
     return data, train_data, test_data
 
@@ -82,6 +89,7 @@ def _generate(  # noqa: PLR0913
     id_column: str | None = None,
     models: list[Synthesizer] | None = None,
     random_seed: int | None = None,
+    positive_label: str | None = None
 ) -> None:
     """Generate synthetic datasets from a source dataset using Synthesizer instances."""
     data, train_data, test_data = _preprocess_data(original_data_filename, data_dir, target_column, random_seed)
@@ -94,11 +102,16 @@ def _generate(  # noqa: PLR0913
         raise ValueError(msg)
 
     if len(unique_classes) == 2:  # noqa: PLR2004
-        true_samples = train_data[target_column].sum()
+        if positive_label is None:
+            msg = "Target column must contain at least one positive class, defaulting to True."
+            positive_label = True
+            logging.warning(msg)
+        negative_label = next(cls for cls in unique_classes if cls != positive_label)
+        true_samples = (train_data[target_column] == positive_label).sum()
         false_samples = total_samples - true_samples
         conditions = [
-            Condition(num_rows=true_samples, column_values={target_column: True}),
-            Condition(num_rows=false_samples, column_values={target_column: False}),
+            Condition(num_rows=true_samples, column_values={target_column: positive_label}),
+            Condition(num_rows=false_samples, column_values={target_column: negative_label}),
         ]
     else:
         counts = train_data[target_column].value_counts()
